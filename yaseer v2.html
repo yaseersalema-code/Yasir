@@ -1102,6 +1102,9 @@ input[type=range]::-webkit-slider-thumb {
               <input type="file" id="invoice-input" accept="image/*" capture="environment" style="display:none" onchange="scanInvoice(this)">
             </label>
           </div>
+          <button onclick="openAPIKeyModal()" style="width:100%;margin-top:8px;background:rgba(59,111,240,.08);border:1px solid rgba(59,111,240,.3);color:var(--blue);border-radius:10px;padding:8px;font-family:inherit;font-size:.8rem;cursor:pointer">
+            🔑 إعداد مفتاح API (مطلوب لقراءة الفواتير)
+          </button>
           <div id="sms-parse-result" style="display:none;margin-top:12px;padding:14px;border-radius:var(--radius-sm);font-size:.85rem"></div>
         </div>
 
