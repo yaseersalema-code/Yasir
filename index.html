@@ -3212,22 +3212,39 @@ async function scanInvoice(input) {
   reader.onload = async function(e) {
     var dataUrl = e.target.result;
     preview.src = dataUrl;
-    // Show scanner frame
     var overlay = document.getElementById('scanner-overlay');
     if (overlay) overlay.style.display = 'block';
 
-    // Convert to base64
-    var base64 = dataUrl.split(',')[1];
-    var mediaType = file.type || 'image/jpeg';
+    // Compress image before sending
+    var canvas = document.createElement('canvas');
+    var img = new Image();
+    img.onload = async function() {
+      var maxW = 1200, maxH = 1600;
+      var w = img.width, h = img.height;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+      if (h > maxH) { w = w * maxH / h; h = maxH; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var compressed = canvas.toDataURL('image/jpeg', 0.7);
+      var base64 = compressed.split(',')[1];
+      var mediaType = 'image/jpeg';
+      await sendInvoiceToAPI(base64, mediaType);
+    };
+    img.src = dataUrl;
+  };
 
+  reader.readAsDataURL(file);
+}
+
+async function sendInvoiceToAPI(base64, mediaType) {
+    var statusEl = document.getElementById('invoice-status');
     try {
-      var res = await fetch('https://api.anthropic.com/v1/messages', {
+      var apiKey = localStorage.getItem('yaseer_api_key') || '';
+      var res = await fetch('/.netlify/functions/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': localStorage.getItem('yaseer_api_key') || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-request-header': 'true'
+          'x-api-key': apiKey
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
@@ -3259,7 +3276,6 @@ async function scanInvoice(input) {
 
       var json = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-      // Fill form
       document.getElementById('inv-amount').value = json.amount || '';
       document.getElementById('inv-category').value = json.category || 'other';
       document.getElementById('inv-merchant').value = json.merchant || '';
@@ -3275,9 +3291,6 @@ async function scanInvoice(input) {
       statusEl.style.color = 'var(--red)';
       console.error('Invoice scan error:', err);
     }
-  };
-
-  reader.readAsDataURL(file);
 }
 
 function confirmInvoice() {
