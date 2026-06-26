@@ -1,0 +1,3256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="يسير">
+<meta name="description" content="لوحة مالية شخصية ذكية">
+
+
+<title>يسير · لوحتك المالية</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Tokens ──────────────────────────────────── */
+:root {
+  --bg:       #0b0f1a;
+  --surface:  #131929;
+  --card:     #1a2035;
+  --border:   #252d45;
+  --border2:  #2e3a58;
+  --blue:     #3b6ff0;
+  --green:    #06c9a0;
+  --orange:   #f97316;
+  --purple:   #a78bfa;
+  --pink:     #f472b6;
+  --yellow:   #fbbf24;
+  --red:      #ef4444;
+  --text:     #e4e9f7;
+  --muted:    #7b87aa;
+  --radius:   16px;
+  --radius-sm: 10px;
+}
+
+/* ── Reset ───────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ── Splash ──────────────────────────────────── */
+#splash {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; z-index: 999;
+  transition: opacity .4s, transform .4s;
+}
+#splash.hide { opacity: 0; transform: scale(.96); pointer-events: none; }
+.splash-logo {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 2.2rem; font-weight: 800;
+  background: linear-gradient(135deg, #3b6ff0, #06c9a0);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+#splash p { color: var(--muted); font-size: .95rem; }
+
+/* ── App shell ───────────────────────────────── */
+#app { display: flex; flex-direction: column; min-height: 100dvh; }
+
+/* ── Topbar ──────────────────────────────────── */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px 10px;
+  padding-top: calc(14px + env(safe-area-inset-top));
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 50;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+.topbar-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1.25rem; font-weight: 700;
+  background: linear-gradient(135deg, #3b6ff0, #06c9a0);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.topbar-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 38px; height: 38px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s;
+}
+.icon-btn:hover { border-color: var(--blue); color: var(--blue); }
+.reset-btn { border-color: rgba(239,68,68,.3); color: var(--red); }
+.reset-btn:hover { border-color: var(--red); background: rgba(239,68,68,.08); color: var(--red); }
+
+/* ── Tab nav ─────────────────────────────────── */
+.tab-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 61px; z-index: 40;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+
+/* ── Global remaining bar (sticky, visible on all tabs) ── */
+.global-remaining-bar {
+  position: sticky; top: 161px; z-index: 35;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(59,111,240,.1), rgba(6,201,160,.08));
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+.grb-label { font-size: .75rem; color: var(--muted); font-weight: 500; }
+.grb-value { font-size: 1.15rem; font-weight: 800; }
+.grb-value.pos { color: var(--green); }
+.grb-value.neg { color: var(--red); }
+.tab {
+  padding: 7px 4px; border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent; color: var(--muted);
+  font-size: .72rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; white-space: nowrap; transition: all .2s;
+  text-align: center; width: 100%;
+}
+.tab.active {
+  background: rgba(59,111,240,.12);
+  border-color: rgba(59,111,240,.4);
+  color: var(--blue);
+}
+.tab:hover:not(.active) { color: var(--text); background: var(--surface); }
+
+/* ── Pages ───────────────────────────────────── */
+.pages { flex: 1; position: relative; }
+.page { display: none; }
+.page.active { display: block; }
+.page-inner {
+  padding: 20px 16px 100px;
+  max-width: 680px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ── Page hero ───────────────────────────────── */
+.page-hero {
+  background: linear-gradient(135deg, rgba(59,111,240,.12), rgba(6,201,160,.08));
+  border: 1px solid rgba(59,111,240,.2);
+  border-radius: var(--radius);
+  padding: 24px 20px; text-align: center;
+}
+.hero-label { font-size: .78rem; color: var(--muted); font-weight: 500; margin-bottom: 6px; letter-spacing: .5px; }
+.hero-value {
+  font-size: 2.8rem; font-weight: 800; letter-spacing: -1.5px;
+  background: linear-gradient(135deg, #3b6ff0, #06c9a0);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub { font-size: .8rem; color: var(--muted); margin-top: 6px; }
+
+
+/* ── AI Chat ─────────────────────────────────── */
+.ai-msg {
+  max-width: 85%; padding: 10px 14px;
+  border-radius: 18px; font-size: .88rem; line-height: 1.5;
+  word-break: break-word; white-space: pre-wrap;
+}
+.ai-msg.bot {
+  background: var(--surface); color: var(--text);
+  border-bottom-right-radius: 4px; align-self: flex-end;
+}
+.ai-msg.user {
+  background: linear-gradient(135deg,#3b6ff0,#06c9a0);
+  color: #fff; border-bottom-left-radius: 4px; align-self: flex-start;
+}
+.ai-msg.typing {
+  background: var(--surface); color: var(--muted);
+  align-self: flex-end; font-style: italic;
+}
+.ai-quick-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 6px 14px; color: var(--text);
+  font-size: .78rem; font-family: inherit; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+#ai-fab:active { transform: scale(0.92); }
+/* ── Hide all gray explanatory sub-texts ─────── */
+.card-sub-title, .formula-hint, .alloc-pct, .alloc-sub,
+.grb-label, .hero-label, .hero-sub, .obl-section-sub,
+.jar-pct, .fixed-tag, .slider-sub, .info-label
+{ display: none !important; }
+
+/* ── Cards ───────────────────────────────────── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.card-title { font-size: .88rem; font-weight: 700; margin-bottom: 4px; }
+.card-sub-title { font-size: .75rem; color: var(--muted); margin-bottom: 14px; }
+
+/* ── Fields ──────────────────────────────────── */
+.field-group { margin-bottom: 14px; }
+.field-group label {
+  display: block; font-size: .78rem; color: var(--muted);
+  font-weight: 500; margin-bottom: 6px;
+}
+.field-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.field-row input {
+  flex: 1; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-size: .98rem; font-family: inherit;
+  padding: 10px 12px; outline: none; transition: border-color .2s;
+}
+.field-row input:focus { border-color: var(--blue); }
+.unit { font-size: .8rem; color: var(--muted); white-space: nowrap; min-width: 28px; }
+.auto-field {
+  background: rgba(6,201,160,.06); border: 1px solid rgba(6,201,160,.2);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  font-size: .98rem; font-weight: 600; color: var(--green);
+}
+.auto-tag { font-size: .68rem; color: var(--blue); font-weight: 600; margin-right: 6px; }
+.fixed-tag { font-size: .68rem; color: var(--muted); font-weight: 400; margin-right: 6px; }
+
+/* ── Stats grid ──────────────────────────────── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px;
+}
+.stat-label { font-size: .72rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+.stat-value { font-size: 1.15rem; font-weight: 700; }
+.stat-value.blue { color: var(--blue); }
+.stat-value.green { color: var(--green); }
+.stat-value.orange { color: var(--orange); }
+
+/* ── Sliders ─────────────────────────────────── */
+.slider-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.slider-item:last-of-type { border-bottom: none; }
+.slider-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: .85rem; margin-bottom: 8px;
+  display: flex; gap: 6px; align-items: center;
+}
+.slider-header { justify-content: space-between; }
+.slider-val { font-size: .85rem; font-weight: 700; color: var(--blue); }
+.slider-amount { font-size: .78rem; color: var(--muted); margin-top: 4px; text-align: left; }
+input[type=range] {
+  width: 100%; -webkit-appearance: none;
+  height: 4px; border-radius: 2px;
+  background: var(--border2); outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--blue); cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(59,111,240,.2);
+}
+.pct-warn { font-size: .75rem; color: var(--red); padding: 8px 0; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+/* ── Alloc card ──────────────────────────────── */
+.alloc-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 6px 16px;
+}
+.alloc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.alloc-row:last-child { border-bottom: none; }
+.alloc-left { display: flex; align-items: center; gap: 10px; }
+.alloc-name { font-size: .88rem; font-weight: 500; }
+.alloc-pct { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.alloc-amt { font-size: .95rem; font-weight: 700; }
+.alloc-amt.blue { color: var(--blue); }
+.alloc-amt.green { color: var(--green); }
+.alloc-amt.purple { color: var(--purple); }
+.alloc-amt.yellow { color: var(--yellow); }
+
+/* ── List (expenses/loans) ───────────────────── */
+.entry-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.entry-row input[type=text] {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); font-size: .88rem;
+  font-family: inherit; padding: 8px 10px; outline: none; transition: border-color .2s;
+}
+.entry-row input[type=number] {
+  width: 100px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); font-size: .88rem;
+  font-family: inherit; padding: 8px 10px; outline: none; transition: border-color .2s;
+}
+.entry-row input:focus { border-color: var(--blue); }
+.btn-rm {
+  background: none; border: none; color: var(--red);
+  cursor: pointer; font-size: 1.1rem; padding: 4px; line-height: 1; flex-shrink: 0;
+}
+.btn-add {
+  width: 100%; padding: 9px; margin-top: 4px;
+  background: transparent; border: 1px dashed var(--border2);
+  border-radius: var(--radius-sm); color: var(--muted);
+  font-size: .82rem; font-family: inherit; cursor: pointer; transition: all .2s;
+}
+.btn-add:hover { border-color: var(--blue); color: var(--blue); }
+.list-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 12px; margin-top: 8px; border-top: 1px solid var(--border);
+  font-size: .82rem; color: var(--muted);
+}
+.total-val { font-size: 1.1rem; font-weight: 700; }
+.total-val.blue { color: var(--blue); }
+.total-val.orange { color: var(--orange); }
+.total-val.pink { color: var(--pink); }
+.total-val.purple { color: var(--purple); }
+.total-val.green { color: var(--green); }
+
+/* ── Radio options ───────────────────────────── */
+.radio-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; margin-top: 10px; }
+.radio-opt { cursor: pointer; }
+.radio-opt input { display: none; }
+.radio-opt span {
+  display: inline-block; padding: 7px 18px;
+  border-radius: 20px; border: 1px solid var(--border);
+  font-size: .82rem; color: var(--muted); background: var(--surface);
+  transition: all .2s; font-family: inherit;
+}
+.radio-opt input:checked + span {
+  border-color: var(--blue); color: var(--blue);
+  background: rgba(59,111,240,.1); font-weight: 600;
+}
+
+/* ── Insurance persons ───────────────────────── */
+.ins-person {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px;
+}
+.ins-person-title { font-size: .75rem; color: var(--pink); font-weight: 600; margin-bottom: 8px; }
+.ins-fields { display: flex; gap: 8px; align-items: center; }
+.ins-fields input[type=text] {
+  flex: 1; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: .88rem;
+  font-family: inherit; padding: 8px 10px; outline: none;
+}
+.ins-fields input[type=number] {
+  width: 100px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: .88rem;
+  font-family: inherit; padding: 8px 10px; outline: none;
+}
+
+/* ── Info grid ───────────────────────────────── */
+.info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0;
+}
+.info-grid.three { grid-template-columns: repeat(3, 1fr); }
+.info-item {
+  background: var(--surface); border-radius: var(--radius-sm);
+  padding: 12px; text-align: center;
+}
+.info-label { font-size: .7rem; color: var(--muted); margin-bottom: 4px; }
+.info-val { font-size: 1rem; font-weight: 700; }
+.info-val.green { color: var(--green); }
+.info-val.orange { color: var(--orange); }
+.formula-hint {
+  font-size: .72rem; color: var(--muted);
+  background: var(--surface); border-radius: 8px;
+  padding: 8px 12px; margin-top: 4px; line-height: 1.6;
+}
+
+/* ── OT days ─────────────────────────────────── */
+.ot-days-row { display: flex; gap: 8px; margin: 8px 0 14px; }
+.ot-btn {
+  flex: 1; padding: 10px 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--muted);
+  font-size: .85rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all .2s; text-align: center;
+}
+.ot-btn.active {
+  background: rgba(249,115,22,.12); border-color: var(--orange);
+  color: var(--orange);
+}
+
+/* ── Slider stepper (+/-) ────────────────────── */
+.slider-stepper { display: flex; gap: 8px; margin-top: 8px; }
+.step-btn {
+  flex: 1; padding: 8px 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-size: 1rem; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all .2s; text-align: center;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.step-btn:active { background: var(--border); transform: scale(0.96); }
+
+
+/* ── Jar cards ──────────────────────────────── */
+.jar-card { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.jar-card:last-of-type { border-bottom: none; }
+.jar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.jar-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.jar-name { font-size: .88rem; font-weight: 700; color: var(--text); }
+.jar-pct  { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.jar-amt  { font-size: 1rem; font-weight: 800; min-width: 80px; text-align: left; }
+.jar-bar-wrap { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+.jar-bar-fill { height: 100%; border-radius: 3px; width: 0%; transition: width .4s ease; }
+
+/* ── Monthly report rows ─────────────────────── */
+.report-month {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  margin-bottom: 10px; overflow: hidden;
+}
+.report-month-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; cursor: pointer; user-select: none;
+  background: var(--surface);
+}
+.report-month-header:active { background: var(--border); }
+.report-month-title { font-size: .9rem; font-weight: 700; color: var(--text); }
+.report-month-total { font-size: .9rem; font-weight: 700; color: var(--red); }
+.report-month-arrow {
+  font-size: .75rem; color: var(--muted);
+  transition: transform .25s; display: inline-block;
+}
+.report-month-arrow.open { transform: rotate(180deg); }
+.report-month-body {
+  display: none; padding: 0 16px 14px; background: var(--bg);
+}
+.report-month-body.open { display: block; }
+.report-cat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: .82rem;
+}
+.report-cat-row:last-child { border-bottom: none; }
+.report-cat-name { color: var(--text); }
+.report-cat-amt  { font-weight: 700; color: var(--red); }
+.report-cat-count { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+
+/* ── Jar cards V2 ─────────────────────── */
+.alloc-jar-card {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.alloc-jar-card:last-of-type { border-bottom: none; }
+.alloc-jar-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.alloc-jar-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.alloc-jar-info { flex: 1; }
+.alloc-jar-name { font-size: .88rem; font-weight: 700; color: var(--text); }
+.alloc-jar-pct  { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.alloc-jar-amt  { font-size: 1rem; font-weight: 800; }
+.alloc-jar-bar  {
+  height: 6px; background: var(--surface);
+  border-radius: 3px; overflow: hidden; margin-bottom: 2px;
+}
+.alloc-jar-fill {
+  height: 100%; border-radius: 3px;
+  transition: width .4s ease;
+}
+
+/* ── Projection table ────────────────────────── */
+.proj-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 2fr 2.5fr;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .78rem;
+  align-items: center;
+}
+.proj-row:last-child { border-bottom: none; }
+.proj-row.header {
+  font-size: .7rem; color: var(--muted);
+  font-weight: 600; padding-bottom: 8px;
+}
+.proj-row.current { background: rgba(59,111,240,.06); border-radius: 6px; padding: 10px 8px; }
+.proj-cell { color: var(--text); }
+.proj-cell.blue  { color: var(--blue); font-weight: 700; }
+.proj-cell.green { color: var(--green); font-weight: 700; }
+.proj-cell.muted { color: var(--muted); }
+.proj-table {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden; margin-top: 10px;
+}
+.proj-header, .proj-row {
+  display: grid; grid-template-columns: 1fr 1.2fr .8fr 1.2fr;
+  padding: 10px 12px; gap: 8px;
+}
+.proj-header {
+  background: var(--surface); font-size: .72rem;
+  color: var(--muted); font-weight: 600;
+}
+.proj-row {
+  border-top: 1px solid var(--border);
+  font-size: .82rem; align-items: center;
+}
+.proj-row span:first-child { color: var(--muted); }
+.proj-row span:last-child { font-weight: 700; color: var(--blue); }
+
+/* ── Extra total card ────────────────────────── */
+.extra-total-card {
+  background: linear-gradient(135deg, rgba(6,201,160,.1), rgba(59,111,240,.08));
+  border: 1px solid rgba(6,201,160,.25);
+  border-radius: var(--radius); padding: 20px; text-align: center;
+}
+.et-label { font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
+.et-value { font-size: 2rem; font-weight: 800; color: var(--green); }
+
+/* ── Remaining hero ──────────────────────────── */
+.remaining-hero {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 32px 20px; text-align: center;
+}
+.rh-label { font-size: .78rem; color: var(--muted); margin-bottom: 10px; letter-spacing: .5px; }
+.rh-value { font-size: 4rem; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+.rh-value.pos { color: var(--green); }
+.rh-value.neg { color: var(--red); }
+.rh-sub { font-size: .82rem; color: var(--muted); margin-top: 10px; }
+
+/* ── Summary table ───────────────────────────── */
+.summary-table { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-top: 14px; }
+.st-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; font-size: .85rem; border-bottom: 1px solid var(--border); }
+.st-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.st-item:last-child { border-bottom: none; }
+.st-label { font-size: .78rem; color: var(--muted); margin-bottom: 4px; }
+.st-amount { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.st-amount.large { font-size: 1.4rem; }
+.st-item.income .st-amount { color: var(--green); }
+.st-item.deduct .st-amount { color: var(--red); }
+.st-item.total .st-amount  { color: var(--red); }
+.st-item.result .st-amount { color: var(--green); }
+.st-item.dsr .st-amount    { color: var(--muted); font-size: .9rem; }
+.st-divider { text-align: center; color: var(--muted); font-size: .72rem; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.st-row:last-child { border-bottom: none; }
+.st-row.header { background: var(--surface); font-size: .72rem; color: var(--muted); font-weight: 700; }
+.st-row.income span:last-child { color: var(--green); font-weight: 600; }
+.st-row.deduct span:last-child { color: var(--red); font-weight: 600; }
+.st-row.divider-row { background: var(--surface); font-size: .72rem; color: var(--muted); font-weight: 700; }
+.st-row.total { background: rgba(249,115,22,.05); font-weight: 700; }
+.st-row.total span:last-child { color: var(--orange); }
+.st-row.dsr { font-size: .78rem; color: var(--muted); }
+.st-row.result { background: rgba(6,201,160,.06); font-weight: 700; }
+.st-row.result span:last-child { color: var(--green); font-size: 1rem; }
+
+/* ── Action bar ──────────────────────────────── */
+.action-bar { display: flex; gap: 12px; margin-top: 4px; }
+.btn-primary {
+  flex: 1; padding: 14px;
+  background: linear-gradient(135deg, #3b6ff0, #06c9a0);
+  border: none; border-radius: var(--radius-sm);
+  color: #0b0f1a; font-size: .95rem; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: opacity .2s;
+}
+.btn-primary:hover { opacity: .88; }
+.btn-secondary {
+  flex: 1; padding: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-size: .95rem; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all .2s;
+}
+.btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── Toast ───────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--card); border: 1px solid var(--green);
+  color: var(--green); padding: 10px 28px;
+  border-radius: 30px; font-size: .88rem; font-weight: 600;
+  opacity: 0; transition: all .35s; z-index: 999; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Print ───────────────────────────────────── */
+@media print {
+  .topbar, .tab-nav, .action-bar, .toast, .btn-add, .btn-rm, .ot-days-row, .radio-group, .global-remaining-bar { display: none !important; }
+  body { background: #fff !important; color: #111 !important; }
+  .page { display: block !important; }
+  .card, .alloc-card, .stat-card, .remaining-hero, .extra-total-card { background: #f8f9ff !important; border: 1px solid #dde !important; break-inside: avoid; margin-bottom: 12px; }
+  .rh-value.pos { color: #059669 !important; }
+  .rh-value.neg { color: #dc2626 !important; }
+  @page { margin: 1.5cm; size: A4; }
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 400px) {
+  .hero-value { font-size: 2.2rem; }
+  .rh-value { font-size: 3rem; }
+  .info-grid.three { grid-template-columns: 1fr 1fr; }
+  .proj-header, .proj-row { grid-template-columns: .8fr 1fr .7fr 1fr; font-size: .75rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Splash ── -->
+<div id="err-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:#fca5a5;font-size:.75rem;padding:8px 12px;z-index:9999;direction:ltr;word-break:break-all"></div>
+<div id="splash">
+  <div class="splash-logo">
+    <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+      <rect width="56" height="56" rx="16" fill="url(#g1)"/>
+      <path d="M16 36 L24 24 L32 30 L40 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="40" cy="18" r="3.5" fill="white"/>
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="56" y2="56">
+          <stop offset="0%" stop-color="#3b6ff0"/>
+          <stop offset="100%" stop-color="#06c9a0"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <span>يسير</span>
+  </div>
+  <p>لوحتك المالية الشخصية</p>
+</div>
+
+<!-- ── App Shell ── -->
+<div id="app" style="display:none">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <svg width="28" height="28" viewBox="0 0 56 56" fill="none">
+        <rect width="56" height="56" rx="14" fill="url(#g2)"/>
+        <path d="M16 36 L24 24 L32 30 L40 18" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="40" cy="18" r="3.5" fill="white"/>
+        <defs><linearGradient id="g2" x1="0" y1="0" x2="56" y2="56"><stop offset="0%" stop-color="#3b6ff0"/><stop offset="100%" stop-color="#06c9a0"/></linearGradient></defs>
+      </svg>
+      <span>يسير</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btn-save" title="حفظ">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-pdf" title="تصدير PDF">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </button>
+      <button class="icon-btn reset-btn" id="btn-reset" title="تصفير الإضافات">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.67"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Nav tabs -->
+  <nav class="tab-nav">
+    <button class="tab active" data-tab="salary">💰 الراتب</button>
+    <button class="tab" data-tab="budget">📊 التوزيع</button>
+    <button class="tab" data-tab="obligations">💳 الالتزامات</button>
+    <button class="tab" data-tab="extras">⚡ الإضافي</button>
+    <button class="tab" data-tab="summary">📋 الملخص</button>
+    <button class="tab" data-tab="sms">📥 المصروفات</button>
+    <button class="tab" data-tab="reports">📆 التقارير</button>
+    <button class="tab" data-tab="projection">📈 راتبي التقديري</button>
+  </nav>
+
+  <!-- المتبقي الثابت — يظهر بكل الصفحات -->
+  <div class="global-remaining-bar" id="global-remaining-bar">
+    <span class="grb-label">صافي الراتب الشهري</span>
+    <span class="grb-value pos" id="grb-value">— ريال</span>
+  </div>
+
+  <!-- Pages -->
+  <main class="pages">
+
+    <!-- ① الراتب -->
+    <section class="page active" id="tab-salary">
+      <div class="page-inner">
+
+        <div class="page-hero">
+          <div class="hero-label">صافي الراتب الشهري</div>
+          <div class="hero-value" id="h-net">0 ريال</div>
+        </div>
+
+        <!-- رابط النظام الرسمي للرواتب -->
+        <a href="https://sso.us.baesystems.com/idp/startSSO.ping?PartnerSpId=KSA.GSA.CUG"
+           target="_blank" rel="noopener noreferrer"
+           style="text-decoration:none;display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:all .2s"
+           onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="width:42px;height:42px;border-radius:12px;background:rgba(59,111,240,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">🏦</div>
+          <div style="flex:1">
+            <div style="font-size:.88rem;font-weight:700;color:var(--text)">تحقق من راتبك الرسمي</div>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:2px">فتح نظام GSA الرسمي لكشف الراتب</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);flex-shrink:0">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>
+
+        <div class="card">
+          <div class="card-title">مكونات الراتب</div>
+          <div class="field-group">
+            <label>الراتب الأساسي</label>
+            <div class="field-row"><input type="number" id="f-basic" style="flex:1" value="10400" min="0" step="100"><span class="unit">ريال</span></div>
+          </div>
+          <div class="field-group">
+            <label>بدل السكن <span class="auto-tag">25% تلقائي</span></label>
+            <div class="field-row auto-field"><span id="f-housing-display">—</span><span class="unit">ريال</span></div>
+          </div>
+          <div class="field-group">
+            <label>بدل النقل <span class="fixed-tag">ثابت</span></label>
+            <div class="field-row"><input type="number" id="f-transport" value="1360" min="0" step="100"><span class="unit">ريال</span></div>
+          </div>
+          <div class="field-group">
+            <label style="margin-bottom:8px">بدلات أخرى</label>
+            <div id="allowances-list"></div>
+            <button class="btn-add" style="margin-top:0" onclick="App.addAllowance()">+ إضافة بدل</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted)">
+              <span>إجمالي البدلات الأخرى</span>
+              <span id="allowances-total" style="font-weight:700;color:var(--green)">0 ريال</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>خصم التأمينات <span style="font-size:.7rem;color:var(--muted)">(أساسي + سكن) × 9.75% · تلقائي</span></label>
+            <div class="field-row auto-field" style="flex:1">
+              <span id="gosi-auto-display" style="color:var(--orange);font-weight:700;font-size:1rem">—</span>
+              <span style="font-size:.8rem;color:var(--muted);margin-right:auto">ر</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">إجمالي الراتب</div>
+            <div class="stat-value blue" id="s-gross">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">استقطاع GOSI</div>
+            <div class="stat-value orange" id="s-gosi">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">صافي الراتب</div>
+            <div class="stat-value green" id="s-net">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">الراتب اليومي</div>
+            <div class="stat-value" id="s-daily">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ② التوزيع -->
+    <section class="page" id="tab-budget">
+      <div class="page-inner">
+
+        <!-- المصاريف الثابتة -->
+        <div class="alloc-card" style="margin-bottom:12px">
+          <div class="alloc-row">
+            <div class="alloc-left"><span class="dot" style="background:#3b6ff0"></span>
+              <div><div class="alloc-name">المصاريف الثابتة</div><div class="alloc-pct">45% من صافي الراتب · ثابت</div></div>
+            </div>
+            <div class="alloc-amt blue" id="al-fixed-amt">—</div>
+          </div>
+        </div>
+
+        <!-- بطاقات التوزيع -->
+        <div class="card">
+          <div class="card-title">وزّع فائضك بالريال</div>
+          <div class="card-sub-title">حدد كم تريد لكل صنف — الباقي يظهر تلقائياً</div>
+
+          <div class="jar-card">
+            <div class="jar-header">
+              <button id="jar-emerg-icon-btn" onclick="window._jarKey='emerg';document.getElementById('emoji-modal').style.display='flex'" style="width:44px;height:44px;font-size:1.4rem;background:rgba(6,201,160,.12);border:1px solid var(--border);border-radius:12px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent">🛡</button>
+              <div style="flex:1">
+                <div class="jar-name">ادخار الطوارئ</div>
+                <div class="jar-pct" id="jar-emerg-pct">—</div>
+              </div>
+              <div class="jar-amt green" id="jar-emerg-amt">—</div>
+            </div>
+            <div class="jar-bar-wrap"><div class="jar-bar-fill" id="jar-emerg-bar" style="background:#06c9a0"></div></div>
+            <div class="field-row" style="margin-top:8px">
+              <input type="number" id="f-alloc-emerg" value="" min="0" step="100" placeholder="0 ريال" oninput="App.updateAllocAmt('emerg',this.value)">
+              <span class="unit">ريال</span>
+            </div>
+          </div>
+
+          <div class="jar-card">
+            <div class="jar-header">
+              <button id="jar-invest-icon-btn" onclick="window._jarKey='invest';document.getElementById('emoji-modal').style.display='flex'" style="width:44px;height:44px;font-size:1.4rem;background:rgba(167,139,250,.12);border:1px solid var(--border);border-radius:12px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent">📈</button>
+              <div style="flex:1">
+                <div class="jar-name">الاستثمار</div>
+                <div class="jar-pct" id="jar-invest-pct">—</div>
+              </div>
+              <div class="jar-amt purple" id="jar-invest-amt">—</div>
+            </div>
+            <div class="jar-bar-wrap"><div class="jar-bar-fill" id="jar-invest-bar" style="background:#a78bfa"></div></div>
+            <div class="field-row" style="margin-top:8px">
+              <input type="number" id="f-alloc-invest" value="" min="0" step="100" placeholder="0 ريال" oninput="App.updateAllocAmt('invest',this.value)">
+              <span class="unit">ريال</span>
+            </div>
+          </div>
+
+          <div class="jar-card">
+            <div class="jar-header">
+              <button id="jar-entertainment-icon-btn" onclick="window._jarKey='entertainment';document.getElementById('emoji-modal').style.display='flex'" style="width:44px;height:44px;font-size:1.4rem;background:rgba(251,113,133,.12);border:1px solid var(--border);border-radius:12px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent">🎮</button>
+              <div style="flex:1">
+                <div class="jar-name">الترفيه</div>
+                <div class="jar-pct" id="jar-entertainment-pct">—</div>
+              </div>
+              <div class="jar-amt" style="color:#fb7185" id="jar-entertainment-amt">—</div>
+            </div>
+            <div class="jar-bar-wrap"><div class="jar-bar-fill" id="jar-entertainment-bar" style="background:#fb7185"></div></div>
+            <div class="field-row" style="margin-top:8px">
+              <input type="number" id="f-alloc-entertainment" value="" min="0" step="100" placeholder="0 ريال" oninput="App.updateAllocAmt('entertainment',this.value)">
+              <span class="unit">ريال</span>
+            </div>
+          </div>
+
+          <div class="list-total">
+            <span>🟡 الفائض المتبقي</span>
+            <span class="total-val" id="jar-surplus-amt" style="color:#fbbf24">—</span>
+          </div>
+          <div id="jar-over-warn" class="pct-warn" style="display:none">⚠ المبالغ المخصصة تتجاوز الفائض المتاح</div>
+        </div>
+
+        <!-- اقتراح المصروف اليومي -->
+        <div class="card" style="background:rgba(6,182,212,.06);border-color:rgba(6,182,212,.2)">
+          <div class="card-title" style="color:#06b6d4">💡 اقتراح المصروف اليومي</div>
+          <div class="card-sub-title">الفائض الشهري بعد المصاريف والطوارئ والاستثمار والترفيه، مقسوم على 30 يوم</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">الفائض الشهري</div>
+              <div class="info-val" id="suggest-surplus-val" style="color:#06b6d4">—</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">المقترح يومياً</div>
+              <div class="info-val" id="suggest-daily-val" style="color:#06b6d4">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- المصاريف اليومية -->
+        <div class="card">
+          <div class="card-title" style="color:#06b6d4">📅 المصاريف اليومية</div>
+          <div class="card-sub-title">حدد مبلغ يومي مسموح، وسجّل صرفك الفعلي يومياً</div>
+
+          <div class="field-group">
+            <label>المبلغ اليومي المسموح</label>
+            <div class="field-row">
+              <input type="number" id="f-daily-limit" value="0" min="0" step="10" oninput="App.updateDailyLimit(this.value)">
+              <span class="unit">ريال</span>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>المصروف الفعلي اليوم <span style="color:var(--accent2);font-size:.7rem">· تلقائي من سجل المصروفات</span></label>
+            <div class="auto-display">
+              <span id="f-daily-spent-display" style="color:#06b6d4;font-weight:600">—</span>
+              <span style="font-size:.8rem;color:var(--muted)">ر</span>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">المتبقي اليوم</div>
+              <div class="info-val" id="daily-remaining-val" style="color:#06b6d4">—</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">خصم الغد (لو تجاوزت)</div>
+              <div class="info-val" id="daily-carryover-val" style="color:var(--red)">—</div>
+            </div>
+          </div>
+          <div class="formula-hint" id="daily-hint">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ الالتزامات -->
+    <section class="page" id="tab-obligations">
+      <div class="page-inner">
+
+        <!-- الالتزامات الشهرية -->
+        <div class="card">
+          <div class="card-title" style="color:var(--blue)">📋 الالتزامات الشهرية</div>
+          <div class="card-sub-title">إيجار · فواتير · اشتراكات</div>
+          <div id="expenses-list"></div>
+          <button class="btn-add" onclick="addRow('expenses')">+ إضافة التزام</button>
+          <div class="list-total"><span>الإجمالي</span><span class="total-val blue" id="t-expenses">—</span></div>
+        </div>
+
+        <!-- القروض -->
+        <div class="card">
+          <div class="card-title" style="color:var(--orange)">🏦 القروض الشهرية</div>
+          <div class="card-sub-title">أقساط · تمويل · بطاقات</div>
+          <div id="loans-list"></div>
+          <button class="btn-add" onclick="addRow('loans')">+ إضافة قرض</button>
+          <div class="list-total"><span>الإجمالي</span><span class="total-val orange" id="t-loans">—</span></div>
+        </div>
+
+        <!-- تأمين الوالدين -->
+        <div class="card">
+          <div class="card-title" style="color:var(--pink)">🏥 تأمين الوالدين</div>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="parents" value="0" onchange="updateInsurance()"><span>لا أحد</span></label>
+            <label class="radio-opt"><input type="radio" name="parents" value="1" onchange="updateInsurance()"><span>شخص واحد</span></label>
+            <label class="radio-opt"><input type="radio" name="parents" value="2" onchange="updateInsurance()" checked><span>شخصان</span></label>
+          </div>
+          <div id="ins-block"></div>
+          <div class="list-total" id="ins-total-row"><span>إجمالي التأمين</span><span class="total-val pink" id="t-insurance">—</span></div>
+        </div>
+
+        <!-- اشتراك النادي -->
+        <div class="card">
+          <div class="card-title" style="color:var(--purple)">🏋️ اشتراك النادي الرياضي</div>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="gym" value="no" checked><span>لا</span></label>
+            <label class="radio-opt"><input type="radio" name="gym" value="yes"><span>نعم</span></label>
+          </div>
+          <div id="gym-block" style="display:none">
+            <div class="field-group"><label>الاشتراك الشهري</label><div class="field-row"><input type="number" id="f-gym" value="200" min="0" step="50" oninput="App.updateGymAmount(this.value)"><span class="unit">ريال</span></div></div>
+          </div>
+          <div class="list-total" id="gym-total-row" style="display:none"><span>يُخصم من الراتب</span><span class="total-val purple" id="t-gym">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ الإضافي -->
+    <section class="page" id="tab-extras">
+      <div class="page-inner">
+
+        <!-- العمل المسائي -->
+        <div class="card">
+          <div class="card-title" style="color:var(--green)">🌙 العمل المسائي</div>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="evening" value="no" checked><span>لا</span></label>
+            <label class="radio-opt"><input type="radio" name="evening" value="yes"><span>نعم</span></label>
+          </div>
+          <div id="evening-block" style="display:none">
+            <div class="info-grid">
+              <div class="info-item"><div class="info-label">اليومي</div><div class="info-val green" id="ev-daily">—</div></div>
+              <div class="info-item"><div class="info-label">الشهري (5 أيام)</div><div class="info-val green" id="ev-monthly">—</div></div>
+            </div>
+            <div class="formula-hint">الأساسي ÷ 30 × 0.481 × 5 أيام</div>
+          </div>
+        </div>
+
+        <!-- الأوفر تايم -->
+        <div class="card">
+          <div class="card-title" style="color:var(--orange)">⏱ الأوفر تايم</div>
+          <div class="card-sub-title">9 ساعات لليوم الواحد</div>
+          <div class="field-group"><label>عدد أيام الأوفر تايم في الشهر</label>
+            <div class="ot-days-row" id="ot-days-row"></div>
+          </div>
+          <div class="field-group">
+            <label>عدد الساعات الإضافية <span style="color:var(--muted);font-size:.7rem">(لمن يدوام بالساعات بدل الأيام)</span></label>
+            <div class="field-row">
+              <input type="number" id="f-ot-hours" value="0" min="0" step="1" oninput="App.setOTHours(this.value)">
+              <span class="unit">ساعة</span>
+            </div>
+          </div>
+          <div class="info-grid three">
+            <div class="info-item"><div class="info-label">سعر الساعة الإضافية</div><div class="info-val orange" id="ot-hourly">—</div></div>
+            <div class="info-item"><div class="info-label">قيمة اليوم</div><div class="info-val orange" id="ot-day">—</div></div>
+            <div class="info-item"><div class="info-label">إجمالي الشهر</div><div class="info-val orange" id="ot-monthly">—</div></div>
+          </div>
+          <div class="formula-hint" id="ot-hint">—</div>
+        </div>
+
+        <!-- On-Call -->
+        <div class="card">
+          <div class="card-title" style="color:#06b6d4">📞 On-Call</div>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="oncall" value="no" onchange="App.setOnCallMode('no')" checked><span>لا يوجد</span></label>
+            <label class="radio-opt"><input type="radio" name="oncall" value="weekend" onchange="App.setOnCallMode('weekend')"><span>نهاية الأسبوع</span></label>
+            <label class="radio-opt"><input type="radio" name="oncall" value="weeklong" onchange="App.setOnCallMode('weeklong')"><span>أسبوع كامل</span></label>
+          </div>
+
+          <!-- نهاية الأسبوع -->
+          <div id="oncall-weekend-block" style="display:none">
+            <div class="card-sub-title">أدخل عدد المكالمات لكل يوم على حدة</div>
+
+            <!-- الخميس -->
+            <div class="field-group">
+              <label>🗓 الخميس <span style="color:var(--muted);font-size:.7rem">(11م ← 12ص · فترة واحدة)</span></label>
+              <div class="field-row">
+                <input type="number" id="oc-thu-calls" value="0" min="0" step="1" oninput="App.setOnCallDayCalls('thu', this.value)">
+                <span class="unit">مكالمة</span>
+              </div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:4px" id="oc-thu-hint">—</div>
+            </div>
+
+            <!-- الجمعة -->
+            <div class="field-group">
+              <label>🗓 الجمعة <span style="color:var(--muted);font-size:.7rem">(يوم كامل · 6 فترات)</span></label>
+              <div class="field-row">
+                <input type="number" id="oc-fri-calls" value="0" min="0" step="1" oninput="App.setOnCallDayCalls('fri', this.value)">
+                <span class="unit">مكالمة</span>
+              </div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:4px" id="oc-fri-hint">—</div>
+            </div>
+
+            <!-- السبت -->
+            <div class="field-group">
+              <label>🗓 السبت <span style="color:var(--muted);font-size:.7rem">(يوم كامل · 6 فترات)</span></label>
+              <div class="field-row">
+                <input type="number" id="oc-sat-calls" value="0" min="0" step="1" oninput="App.setOnCallDayCalls('sat', this.value)">
+                <span class="unit">مكالمة</span>
+              </div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:4px" id="oc-sat-hint">—</div>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-item"><div class="info-label">فترات بدون مكالمات (ثابت)</div><div class="info-val" id="oc-fixed-val" style="color:#06b6d4">—</div></div>
+              <div class="info-item"><div class="info-label">فترات بمكالمات (نصف أوفر تايم)</div><div class="info-val" id="oc-active-val" style="color:#06b6d4">—</div></div>
+            </div>
+            <div class="formula-hint" id="oc-weekend-hint">—</div>
+          </div>
+
+          <!-- أسبوع كامل -->
+          <div id="oncall-weeklong-block" style="display:none">
+            <div class="card-sub-title">مبلغ ثابت أسبوعي يرتفع بعد شهر من الاستمرار</div>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="oncall-duration" value="normal" onchange="App.setOnCallDuration('normal')" checked><span>أول شهر · 700 ريال/أسبوع</span></label>
+              <label class="radio-opt"><input type="radio" name="oncall-duration" value="extended" onchange="App.setOnCallDuration('extended')"><span>بعد الشهر · 1,400 ريال/أسبوع</span></label>
+            </div>
+            <div class="field-group">
+              <label>عدد الأسابيع في الشهر</label>
+              <div class="ot-days-row" id="oncall-weeks-row"></div>
+            </div>
+            <div class="info-grid">
+              <div class="info-item"><div class="info-label">سعر الأسبوع</div><div class="info-val" id="oc-week-price" style="color:#06b6d4">—</div></div>
+              <div class="info-item"><div class="info-label">إجمالي الشهر</div><div class="info-val" id="oc-weeklong-total" style="color:#06b6d4">—</div></div>
+            </div>
+            <div class="formula-hint" id="oc-weeklong-hint">—</div>
+          </div>
+
+          <div class="list-total" id="oncall-total-row" style="display:none">
+            <span>إجمالي On-Call شهرياً</span>
+            <span class="total-val" id="t-oncall" style="color:#06b6d4">—</span>
+          </div>
+        </div>
+
+        <!-- إجمالي الدخل الإضافي -->
+        <div class="extra-total-card">
+          <div class="et-label">إجمالي الدخل الإضافي شهرياً</div>
+          <div class="et-value" id="total-extra">— ريال</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ الملخص -->
+    <section class="page" id="tab-summary">
+      <div class="page-inner">
+
+        <!-- الرقم الكبير -->
+        <div class="remaining-hero">
+          <div class="rh-label">الراتب المتبقي بعد كل الالتزامات</div>
+          <div class="rh-value pos" id="rh-value">— ريال</div>
+          <div class="rh-sub" id="rh-sub">—</div>
+        </div>
+
+        <!-- جدول الملخص -->
+        <div class="card">
+          <div class="card-title">تفصيل كامل</div>
+          <div class="summary-table">
+            <div class="st-row header"><span>البند</span><span>المبلغ</span></div>
+            <div class="st-row income"><span>صافي الراتب</span><span id="st-net">—</span></div>
+            <div class="st-row income"><span>دخل إضافي (مسائي + أوفر + On-Call)</span><span id="st-extra">—</span></div>
+            <div class="st-row divider-row"><span colspan="2">الالتزامات</span></div>
+            <div class="st-row deduct"><span>الالتزامات الشهرية</span><span id="st-expenses">—</span></div>
+            <div class="st-row deduct"><span>أقساط القروض</span><span id="st-loans">—</span></div>
+            <div class="st-row deduct"><span>تأمين الوالدين</span><span id="st-ins">—</span></div>
+            <div class="st-row deduct"><span>اشتراك النادي</span><span id="st-gym">—</span></div>
+            <div class="st-row total"><span>الإجمالي الكلي للالتزامات</span><span id="st-total-obl">—</span></div>
+            <div class="st-row dsr"><span>حد الاستقطاع (55%)</span><span id="st-dsr">—</span></div>
+            <div class="st-row result" id="st-result-row"><span>المتبقي الصافي</span><span id="st-remaining">—</span></div>
+          </div>
+        </div>
+
+        <!-- أزرار -->
+        <div class="action-bar">
+          <button class="btn-primary" id="btn-save2">💾 حفظ البيانات</button>
+          <button class="btn-secondary" onclick="window.print()">📄 تصدير PDF</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑥ تصنيف رسائل البنك -->
+    <section class="page" id="tab-sms">
+      <div class="page-inner">
+
+        <!-- لصق الرسالة -->
+        <div class="card">
+          <div class="card-title">📥 لصق رسالة البنك</div>
+          <div class="card-sub-title">انسخ رسالة SMS من بنكك والصقها هنا — يدعم أغلب البنوك السعودية</div>
+          <textarea id="sms-input" placeholder="مثال: تم خصم 150.00 ريال من حسابك في 18/06 لدى STC PAY..." rows="4" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:.88rem;padding:12px;outline:none;resize:vertical;direction:rtl"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-primary" style="flex:1" onclick="App.parseSMS()">تحليل 🔍</button>
+            <label class="btn-secondary" style="flex:1;text-align:center;cursor:pointer">
+              📷 رفع فاتورة
+              <input type="file" id="invoice-input" accept="image/*" capture="environment" style="display:none" onchange="scanInvoice(this)">
+            </label>
+          </div>
+          <div id="sms-parse-result" style="display:none;margin-top:12px;padding:14px;border-radius:var(--radius-sm);font-size:.85rem"></div>
+        </div>
+
+        <!-- ملخص الشهر -->
+        <div class="page-hero" style="background:linear-gradient(135deg, rgba(239,68,68,.1), rgba(249,115,22,.08));border-color:rgba(239,68,68,.2)">
+          <div class="hero-label">إجمالي المصروفات هذا الشهر</div>
+          <div class="hero-value" id="sms-total" style="background:linear-gradient(135deg,#ef4444,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent">0 ريال</div>
+          <div class="hero-sub" id="sms-count-sub">0 عملية مسجّلة</div>
+        </div>
+
+        <!-- التصنيفات -->
+        <div class="card">
+          <div class="card-title">📊 المصروفات حسب التصنيف</div>
+          <div id="sms-categories-list"><div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px 0">لا توجد عمليات بعد</div></div>
+        </div>
+
+        <!-- سجل العمليات -->
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>🧾 سجل العمليات</span>
+            <button onclick="App.clearSMSLog()" style="background:none;border:none;color:var(--red);font-size:.75rem;font-family:inherit;cursor:pointer">مسح الكل</button>
+          </div>
+          <div id="sms-log-list"><div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px 0">لا توجد عمليات بعد</div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ⑦ التقارير الشهرية -->
+    <section class="page" id="tab-reports">
+      <div class="page-inner">
+
+        <div class="card">
+          <div class="card-title">📆 التقارير الشهرية</div>
+          <div class="card-sub-title">ملخص كل شهر من سجل المصروفات — اضغط السهم للتفاصيل</div>
+          <div id="reports-list"><div style="text-align:center;color:var(--muted);font-size:.85rem;padding:30px 0">لا توجد بيانات بعد · أضف مصروفات من قسم المصروفات</div></div>
+        </div>
+
+      </div>
+    </section>
+
+  <!-- ⑧ تسقيط الراتب -->
+  <section class="page" id="tab-projection">
+    <div class="page-inner">
+
+      <div class="card">
+        <div class="card-title" style="color:#3b6ff0">📈 راتبي المستقبلي التقديري</div>
+        <div class="card-sub-title">يسحب البدلات من صفحة الراتب تلقائياً — أدخل نسبة الزيادة والمدة</div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">الراتب الأساسي الحالي</div>
+            <div class="info-val blue" id="proj-current-basic">—</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">صافي الراتب الحالي</div>
+            <div class="info-val blue" id="proj-current-total">—</div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>نسبة الزيادة السنوية</label>
+          <div class="field-row">
+            <input type="number" id="proj-rate" value="" min="0" max="100" step="0.5" placeholder="مثال: 5"
+              oninput="App.updateProjection()">
+            <span class="unit">%</span>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>عدد السنوات</label>
+          <div class="field-row">
+            <input type="number" id="proj-years" value="" min="1" max="40" step="1" placeholder="مثال: 10"
+              oninput="App.updateProjection()">
+            <span class="unit">سنة</span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:4px">
+          <button onclick="App.clearProjectionTable()"
+            style="background:none;border:none;color:var(--red);font-size:.78rem;font-family:inherit;cursor:pointer">
+            🗑 مسح الجدول
+          </button>
+        </div>
+      </div>
+
+      <!-- جدول النتائج -->
+      <div id="proj-table-wrap" style="display:none">
+        <div class="card">
+          <div class="card-title">جدول الزيادات السنوية</div>
+          <div id="proj-table"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  </main>
+
+  <!-- Toast -->
+  
+<!-- Reset Modal -->
+<div id="reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;max-width:340px;width:100%;text-align:center">
+    <div style="font-size:2rem;margin-bottom:12px">🔄</div>
+    <div style="font-size:1rem;font-weight:700;margin-bottom:8px">تصفير الإضافات</div>
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:24px;line-height:1.6">
+      سيتم تصفير الالتزامات، القروض، التأمين، النادي، العمل المسائي، والأوفر تايم.<br>
+      <strong style="color:var(--text)">الراتب والبدلات لن تتأثر.</strong>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeResetModal()" style="flex:1;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer">إلغاء</button>
+      <button onclick="confirmReset()" style="flex:1;padding:12px;background:rgba(239,68,68,.15);border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer">تصفير ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Daily limit exceeded modal -->
+<div id="daily-limit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--red);border-radius:var(--radius);padding:28px 24px;max-width:340px;width:100%;text-align:center">
+    <div style="font-size:2rem;margin-bottom:12px">⚠️</div>
+    <div style="font-size:1rem;font-weight:700;margin-bottom:8px;color:var(--red)">تعديت المبلغ اليومي!</div>
+    <div style="font-size:.85rem;color:var(--text);margin-bottom:8px;line-height:1.6" id="daily-limit-modal-text">—</div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:24px;line-height:1.6">سيتم خصم الفرق من المبلغ اليومي المسموح ليوم بكرة تلقائياً.</div>
+    <button onclick="closeDailyLimitModal()" style="width:100%;padding:12px;background:rgba(239,68,68,.15);border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer">تمام ✓</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">تم الحفظ ✅</div>
+
+</div><!-- /app -->
+
+<script>
+/**
+ * db.js — Local persistence layer
+ * Schema v1: all data stored under key "yaseer_v1"
+ */
+
+window.onerror = function(msg, src, line, col, err) {
+  const b = document.getElementById('err-banner');
+  if(b) { b.style.display='block'; b.textContent = (err ? err.stack : msg) || msg; }
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  const b = document.getElementById('err-banner');
+  if(b) { b.style.display='block'; b.textContent = e.reason; }
+});
+
+const DB = (() => {
+  const KEY = 'yaseer_v1';
+
+  const defaults = {
+    version: 1,
+    salary: {
+      basic: 10400,
+      transportAllowance: 1360,
+      basicPct: 4,
+      gosiPct: 9.75,
+      gosiAmt: 0,
+      allowances: [],
+    },
+    budget: {
+      pctFixed: 45,
+      amtEmerg: 0,
+      amtInvest: 0,
+      amtEntertainment: 0,
+    },
+    expenses: [
+      { id: 1, name: 'إيجار', amount: 2000 },
+      { id: 2, name: 'كهرباء', amount: 300 },
+      { id: 3, name: 'اشتراكات', amount: 150 },
+    ],
+    loans: [
+      { id: 1, name: 'قرض شخصي', amount: 1306 },
+      { id: 2, name: 'قرض السيارة', amount: 1404 },
+    ],
+    insurance: {
+      count: 2,
+      persons: [
+        { name: 'الوالد', amount: 350 },
+        { name: 'الوالدة', amount: 350 },
+      ],
+    },
+    gym: { enabled: false, amount: 200 },
+    evening: { enabled: false },
+    overtime: { days: 4, hours: 0 },
+    oncall: { mode: 'no', thuCalls: 0, friCalls: 0, satCalls: 0, extended: false, weeks: 4 },
+    dailyExpense: { limit: 0, carryoverDebt: 0, lastDate: null },
+    smsLog: [],
+  };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return JSON.parse(JSON.stringify(defaults));
+      const saved = JSON.parse(raw);
+      // Deep merge saved over defaults (so new keys appear after updates)
+      return deepMerge(JSON.parse(JSON.stringify(defaults)), saved);
+    } catch (e) {
+      return JSON.parse(JSON.stringify(defaults));
+    }
+  }
+
+  function save(state) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function deepMerge(target, source) {
+    for (const key of Object.keys(source)) {
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+        if (!target[key]) target[key] = {};
+        deepMerge(target[key], source[key]);
+      } else {
+        target[key] = source[key];
+      }
+    }
+    return target;
+  }
+
+  return { load, save, defaults };
+})();
+
+
+/**
+ * calc.js — Pure financial calculation engine
+ * All functions are stateless and testable independently
+ */
+
+const Calc = (() => {
+
+  /**
+   * Salary calculations
+   */
+  function salary(s) {
+    const housing        = s.basic * 0.25;   // 25% من الأساسي
+    const otherAllowances = (s.allowances || []).reduce((sum,a) => sum+(Number(a.amount)||0), 0);
+
+    // GOSI = (أساسي + سكن) × 9.75%
+    const gosiBase       = s.basic + housing;
+    const gosi           = gosiBase * 0.0975;
+
+    // إجمالي الراتب = أساسي + سكن + نقل + بدلات أخرى
+    const totalGross     = gosiBase + s.transportAllowance + otherAllowances;
+
+    // قاعدة حساب الأوفر تايم: أساسي + سكن + نقل فقط (بدون البدلات الأخرى)
+    const overtimeBase   = gosiBase + s.transportAllowance;
+
+    // صافي = (أساسي + سكن − GOSI) + نقل + بدلات أخرى
+    const net            = (gosiBase - gosi) + s.transportAllowance + otherAllowances;
+    const daily          = net / 30;
+    const totalBasic     = s.basic;
+    return { totalBasic, housing, gosiBase, totalGross, overtimeBase, gosi, net, daily, otherAllowances };
+  }
+
+  /**
+   * Budget allocation
+   */
+  function budget(net, b) {
+    const pFixed    = b.pctFixed || 45;
+    const fixed     = net * pFixed / 100;
+    const remainder = net - fixed;
+    const emerg         = Math.max(0, Number(b.amtEmerg)         || 0);
+    const invest        = Math.max(0, Number(b.amtInvest)        || 0);
+    const entertainment = Math.max(0, Number(b.amtEntertainment) || 0);
+    const allocated = emerg + invest + entertainment;
+    const surplus   = remainder - allocated;
+    const overLimit = allocated > remainder;
+    return {
+      fixed, remainder,
+      emerg, invest, entertainment,
+      allocated, surplus, overLimit,
+      pSurplus: remainder > 0 ? Math.max(0, surplus / remainder * 100) : 0
+    };
+  }
+
+  /**
+   * Obligations totals
+   */
+  function obligations(state) {
+    const totalExpenses = state.expenses.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+    const totalLoans    = state.loans.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+    const insCount      = state.insurance.count;
+    const totalIns      = state.insurance.persons
+      .slice(0, insCount)
+      .reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const gymAmt        = state.gym.enabled ? (Number(state.gym.amount) || 0) : 0;
+    const totalObl      = totalExpenses + totalLoans + totalIns + gymAmt;
+    return { totalExpenses, totalLoans, totalIns, gymAmt, totalObl };
+  }
+
+  /**
+   * Evening work income
+   * Formula: basic / 30 * 0.481 * 5 days
+   */
+  function eveningIncome(basic) {
+    const daily   = (basic / 30) * 0.481;
+    const monthly = daily * 5;
+    return { daily, monthly };
+  }
+
+  /**
+   * Overtime calculation
+   * Basic hourly wage:     basic / 30 / 9
+   * Total hourly wage:     totalSalary / 30 / 9
+   * Additional hourly:     totalHourly + (basicHourly / 2)
+   * Day value:             additionalHourly * 9
+   * Monthly:               dayValue * days
+   */
+  function overtime(overtimeBase, basic, days, hours) {
+    // overtimeBase = أساسي + سكن + نقل فقط (بدون البدلات الأخرى) — مطابق لمعادلة الإكسل الأصلية
+    const basicHourly    = basic / 30 / 9;
+    const totalHourly    = overtimeBase / 30 / 9;
+    const additionalHourly = totalHourly + (basicHourly / 2);
+    const dayValue       = additionalHourly * 9;
+
+    const daysMonthly  = dayValue * (Number(days)  || 0);
+    const hoursMonthly = additionalHourly * (Number(hours) || 0); // نفس سعر الساعة الإضافية، بدون أي فرق بالمعادلة
+    const monthly       = daysMonthly + hoursMonthly;
+
+    return { basicHourly, totalHourly, additionalHourly, dayValue, daysMonthly, hoursMonthly, monthly };
+  }
+
+  /**
+   * On-Call calculation
+   * Mode "weekend": Thu 11pm → Sat 11pm.
+   *   Each "period" unit = half of the FULL overtime day value (ot.dayValue / 2) — this is
+   *   NOT a separate hourly formula, it directly reuses the existing overtime day value.
+   *   - الخميس: فترة واحدة (الساعة 11م-12ص). صفر مكالمات = 60 SAR. مكالمة أو أكثر = نصف قيمة يوم الأوفر تايم.
+   *   - الجمعة: 6 فترات (4 ساعات كل واحدة). صفر مكالمات باليوم كامل = 240 ر ثابتة.
+   *     أي مكالمة واحدة في أي فترة تحوّل اليوم كامل لحساب بالفترات: كل فترة فيها مكالمة = نصف قيمة يوم الأوفر تايم،
+   *     وأي فترة بدون مكالمة في نفس اليوم = صفر (لا تُحسب لها أي قيمة) — الـ240 الثابتة لا تظهر إلا لو اليوم كله بدون أي مكالمة.
+   *   - السبت: نفس منطق الجمعة بالضبط.
+   * Mode "weeklong": flat 700 ر/week, or 1400 ر/week if onCallExtended, × number of weeks in month.
+   */
+  function onCall(state, otDayValue) {
+    const oc = state.oncall || {};
+    if (!oc.mode || oc.mode === 'no') {
+      return { mode: 'no', monthly: 0 };
+    }
+
+    if (oc.mode === 'weekend') {
+      const halfDayValue = otDayValue / 2; // نصف قيمة يوم الأوفر تايم الكامل — لكل فترة متأثرة
+
+      // ── الخميس: فترة واحدة فقط (11م-12ص) ──
+      const thuCalls  = Math.max(0, Number(oc.thuCalls) || 0);
+      const thuActive = thuCalls > 0 ? 1 : 0;
+      const thuFixed  = 1 - thuActive;
+      const thuTotal  = thuFixed * 60 + thuActive * halfDayValue;
+
+      // ── الجمعة: 6 فترات — أي مكالمة باليوم تحوّل اليوم كامل لحساب بالفترات (الفترات الفاضية = صفر) ──
+      const friCalls   = Math.max(0, Number(oc.friCalls) || 0);
+      const friActive  = Math.min(6, friCalls);
+      const friFixed   = friCalls > 0 ? 0 : 6;
+      const friTotal   = friCalls > 0
+        ? (friActive * halfDayValue)
+        : 240;
+
+      // ── السبت: نفس منطق الجمعة ──
+      const satCalls   = Math.max(0, Number(oc.satCalls) || 0);
+      const satActive  = Math.min(6, satCalls);
+      const satFixed   = satCalls > 0 ? 0 : 6;
+      const satTotal   = satCalls > 0
+        ? (satActive * halfDayValue)
+        : 240;
+
+      const activePeriods = thuActive + friActive + satActive;
+      const activeTotal   = activePeriods * halfDayValue;
+      const fixedTotal     = thuTotal + friTotal + satTotal - activeTotal;
+      const monthly        = thuTotal + friTotal + satTotal;
+
+      return {
+        mode: 'weekend',
+        thuCalls, friCalls, satCalls,
+        thuActive, friActive, satActive,
+        thuFixed, friFixed, satFixed,
+        thuTotal, friTotal, satTotal,
+        activePeriods, halfDayValue,
+        monthly
+      };
+    }
+
+    if (oc.mode === 'weeklong') {
+      const weekPrice = oc.extended ? 1400 : 700;
+      const weeks = Math.max(0, Number(oc.weeks) || 0);
+      const monthly = weekPrice * weeks;
+      return { mode: 'weeklong', weekPrice, weeks, monthly };
+    }
+
+    return { mode: 'no', monthly: 0 };
+  }
+
+  /**
+   * Daily expense tracking
+   * limit: المبلغ اليومي المسموح
+   * spent: المصروف الفعلي اليوم
+   * carryoverDebt: أي دين متراكم من تجاوز يوم سابق (يُخصم من حد اليوم الحالي)
+   */
+  function dailyExpense(d) {
+    const limit  = Number(d.limit)  || 0;
+    const spent  = Number(d.spent)  || 0;
+    const carryoverDebt = Number(d.carryoverDebt) || 0;
+
+    const effectiveLimit = Math.max(0, limit - carryoverDebt); // الحد الفعلي بعد خصم دين الأمس
+    const remaining = effectiveLimit - spent;
+    const exceeded  = spent > effectiveLimit;
+    const overflow  = exceeded ? (spent - effectiveLimit) : 0; // يُخصم من حد الغد
+
+    return { limit, spent, carryoverDebt, effectiveLimit, remaining, exceeded, overflow };
+  }
+
+  /**
+   * Projection: 3-year salary forecast
+   */
+  function projection(totalBasic, housing, transport, basicPct) {
+    // basicPct is now a flat ر bonus, not a percentage
+    const years = [0, 1, 2].map(i => {
+      const basic = totalBasic; // stays same (no % growth)
+      const total = totalBasic + housing + transport;
+      return { basic: totalBasic, housing, total };
+    });
+    return years;
+  }
+
+  /**
+   * Full calculation — single entry point
+   */
+  /**
+   * Sum today's debit transactions from the SMS log
+   */
+  function todaySpentFromSMS(smsLog) {
+    if (!smsLog || !smsLog.length) return 0;
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    return smsLog
+      .filter(e => e.type === 'debit' && e.addedAt && e.addedAt.slice(0, 10) === today)
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }
+
+  function run(state) {
+    const sal   = salary(state.salary);
+    const bud   = budget(sal.net, state.budget);
+    const obl   = obligations(state);
+    const ev    = eveningIncome(state.salary.basic);
+    const ot    = overtime(sal.overtimeBase, state.salary.basic, state.overtime.days, state.overtime.hours);
+    const oc    = onCall(state, ot.dayValue);
+    const proj  = projection(sal.totalBasic, sal.housing, state.salary.transportAllowance, state.salary.basicPct);
+
+    const todaySpent = todaySpentFromSMS(state.smsLog);
+    const dailyState = Object.assign({}, state.dailyExpense || {}, { spent: todaySpent });
+    const daily = dailyExpense(dailyState);
+
+    const extraIncome = (state.evening.enabled ? ev.monthly : 0) + ot.monthly + oc.monthly;
+    const dsrLimit    = sal.net * 0.55;
+    const remaining   = sal.net + extraIncome - obl.totalObl;
+
+    return { sal, bud, obl, ev, ot, oc, proj, daily, extraIncome, dsrLimit, remaining };
+  }
+
+  return { run, salary, budget, obligations, eveningIncome, overtime, onCall, dailyExpense, todaySpentFromSMS, projection };
+})();
+
+
+/**
+ * sms.js — Bank SMS parser
+ * Extracts amount, transaction type, and category from Saudi bank SMS text
+ */
+
+const SMS = (() => {
+
+  // ── Category keyword dictionary (Arabic + English) ──────
+  const CATEGORIES = [
+    { key: 'food', label: '🍔 مطاعم وكافيهات', icon: '🍔', color: '#f97316',
+      words: ['مطعم','كافيه','كافي','قهوة','مقهى','restaurant','cafe','coffee','starbucks','ستاربكس',
+        'jahez','جاهز','hungerstation','هنقرستيشن','talabat','طلبات','كودو','kudu','مارقي',
+        'بيتزا','pizza','برجر','burger','شاورما','بروست','ماكدونالدز','mcdonalds','kfc','كنتاكي',
+        'البيك','albaik','هرفي','مطبخ','سمك','مأكولات','وجبة','فطور','غداء','عشاء','فلافل',
+        'حلويات','sweets','bakery','مخبز','خبز','كيك','cake','juice','عصير','ايس كريم',
+        'sushi','سوشي','grill','شيبس','بقلاوة','nandos','ناندوز','texaz','تكساز'] },
+
+    { key: 'grocery', label: '🛒 بقالة وسوبرماركت', icon: '🛒', color: '#06c9a0',
+      words: ['بقالة','سوبرماركت','تموينات','بنده','panda','بندة','كارفور','carrefour',
+        'danube','دانوب','لولو','lulu','عبدالله العثيم','othaim','العثيم',
+        'bin dawood','بن داود','bindawood','hyper','هايبر','نستو','nesto',
+        'tamimi','التميمي','farm','فارم','market','ماركت','grocery',
+        'المزرعة','خضار','خضروات','فواكه','sultan','سلطان'] },
+
+    { key: 'transport', label: '🚗 مواصلات ووقود', icon: '🚗', color: '#3b6ff0',
+      words: ['وقود','بنزين','محطة','أرامكو','aramco','uber','أوبر','كريم','careem',
+        'بترومين','petromin','سيارة','صيانة','parking','مواقف','taxi','تاكسي',
+        'indrive','نقل','شحن','ايجار سيارة','rent car','rental','تأجير',
+        'saudia','طيران','airlines','flydubai','flynas','مطار','airport',
+        'قطار','haramain','الحرمين','metro','مترو','bus','باص'] },
+
+    { key: 'shopping', label: '🛍 تسوق', icon: '🛍', color: '#a78bfa',
+      words: ['أمازون','amazon','نون','noon','شي إن','shein','نمشي','namshi',
+        'ساكو','saco','jarir','جرير','اكسايت','xcite','ابل','apple',
+        'زارا','zara','h&m','next','نيكست','adidas','اديداس','nike','نايك',
+        'aldo','الدو','ikea','ايكيا','extra','اكسترا','samsung','سامسونج',
+        'huawei','هواوي','xiaomi','شاومي','iphone','لاب توب','laptop',
+        'playstation','بلايستيشن','xbox','ملابس','احذية','shoes','bags','حقائب',
+        'watches','ساعات','jewelry','مجوهرات','gold','ذهب','accessories',
+        'virgin','فيرجن','book','كتب','stationery','قرطاسية','noon','namshi'] },
+
+    { key: 'bills', label: '🧾 فواتير وخدمات', icon: '🧾', color: '#fbbf24',
+      words: ['فاتورة','اتصالات','stc','موبايلي','mobily','زين','zain',
+        'كهرباء','مياه','إنترنت','internet','اشتراك','netflix','نتفلكس',
+        'shahid','شاهد','spotify','anghami','انغامي','osn','bein','بين سبورتس',
+        'مدرسة','رسوم','جامعة','حضانة','تعليم','school',
+        'ايجار','إيجار','rent','ejar','تأمين','insurance',
+        'sadad','سداد','بلدية','municipality','طاقة','غاز','ماء'] },
+
+    { key: 'health', label: '💊 صحة وصيدلية', icon: '💊', color: '#f472b6',
+      words: ['صيدلية','pharmacy','مستشفى','عيادة','دكتور','تحليل','اسنان','نهدي','nahdi',
+        'الدواء','dawaa','clinic','مركز صحي','طبيب','بصريات','نظارات','optical',
+        'gym','جيم','fitness','نادي رياضي','sports','yoga','يوغا','spa','مساج',
+        'hospital','مختبر','أشعة','دواء','vitamins','فيتامين'] },
+
+    { key: 'transfer', label: '🔄 تحويلات', icon: '🔄', color: '#06b6d4',
+      words: ['تحويل','حوالة','transfer','stc pay','stcpay','اس تي سي باي',
+        'urpay','western union','paypal','جوال','تحويل بنكي','إرسال','ارسال'] },
+
+    { key: 'cash', label: '💵 سحب نقدي', icon: '💵', color: '#94a3b8',
+      words: ['صراف','atm','سحب نقدي','سحب من','cash withdrawal'] },
+
+    { key: 'deposit', label: '💰 إيداع', icon: '💰', color: '#22c55e',
+      words: ['إيداع','ايداع','اضافة','إضافة','credit','استلام','وارد','راتب','salary'] },
+  ];
+
+  /**
+   * Parse a single SMS text — extract amount, type (debit/credit), category
+   */
+  function parse(text) {
+    const t = text.trim();
+    if (!t) return null;
+
+    // ── Extract amount: looks for number followed by ريال/ر/SR or preceded by مبلغ ──
+    const amountPatterns = [
+      /(?:مبلغ|بمبلغ|قيمة|خصم|إيداع|سحب)\D{0,15}?([\d,]+\.?\d*)\s*(?:ريال|sar|sr|ر\.س)/i,
+      /([\d,]+\.?\d*)\s*(?:ريال|sar|sr|ر\.س)/i,
+      /(?:ريال|sar|sr|ر\.س)\D{0,5}?([\d,]+\.?\d*)/i,
+    ];
+    let amount = null;
+    for (const re of amountPatterns) {
+      const m = t.match(re);
+      if (m) { amount = parseFloat(m[1].replace(/,/g, '')); break; }
+    }
+    if (amount === null) return null; // can't parse without amount
+
+    // ── Determine transaction type: debit (سحب/خصم) or credit (إيداع) ──
+    const debitWords  = ['خصم','سحب','شراء','purchase','debit','دفع','استقطاع'];
+    const creditWords = ['إيداع','ايداع','اضافة','إضافة','credit','استلام','وارد','راتب'];
+    const lower = t.toLowerCase();
+    let type = 'debit'; // default assumption
+    if (creditWords.some(w => t.includes(w) || lower.includes(w.toLowerCase()))) type = 'credit';
+    if (debitWords.some(w => t.includes(w) || lower.includes(w.toLowerCase())))  type = 'debit';
+
+    // ── Extract merchant name first (used to improve categorization) ──
+    let merchant = null;
+    const merchantPatterns = [
+      /(?:لدى|عند|من محل|بمحل|في محل)\s+([^\n\r،,\.]{2,40})/,
+      /(?:at|from|to|@)\s+([A-Za-z][^\n\r،,\.]{1,40})/i,
+    ];
+    for (const re of merchantPatterns) {
+      const m = t.match(re);
+      if (m) { merchant = m[1].trim().split(/\s{2,}|\n/)[0]; break; }
+    }
+
+    // ── Determine category — search full SMS text + merchant name ──
+    const searchText = lower + ' ' + (merchant || '').toLowerCase();
+    let category = type === 'credit' ? 'deposit' : 'other';
+    for (const cat of CATEGORIES) {
+      if (cat.key === 'deposit' && type !== 'credit') continue;
+      if (cat.words.some(w => searchText.includes(w.toLowerCase()))) {
+        category = cat.key;
+        break;
+      }
+    }
+
+    // ── Extract date if present (dd/mm or dd-mm) ──
+    let dateStr = null;
+    const dateMatch = t.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+    if (dateMatch) dateStr = dateMatch[0];
+
+    const catObj = CATEGORIES.find(c => c.key === category) ||
+      { key: 'other', label: '📦 أخرى', icon: '📦', color: '#7b87aa' };
+
+    return {
+      id: Date.now() + Math.random(),
+      raw: t,
+      amount,
+      type,                 // 'debit' | 'credit'
+      category: catObj.key,
+      categoryLabel: catObj.label,
+      categoryColor: catObj.color,
+      merchant,
+      dateStr,
+      addedAt: new Date().toISOString(),
+    };
+  }
+
+  return { parse, CATEGORIES };
+})();
+
+
+/**
+ * ui.js — DOM rendering layer
+ * Reads from Calc results, writes to DOM. No business logic here.
+ */
+
+const UI = (() => {
+
+  // ── Formatters ─────────────────────────────────────────
+  const _addCommas = n => Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fmt  = n => _addCommas(n);
+  const fmtD = n => Math.abs(Number(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fmtInt = n => _addCommas(n);
+  const money = n => fmt(n) + ' ريال';
+  const moneyD = n => fmtD(n) + ' ريال';
+  const moneyInt = n => fmtInt(n) + ' ريال';
+  const $ = id => document.getElementById(id);
+
+  // ── Render salary tab ───────────────────────────────────
+  function renderSalary(res, state) {
+    const { sal } = res;
+    if($('gosi-auto-display')) $('gosi-auto-display').textContent = money(sal.gosi);
+    if($('allowances-total')) $('allowances-total').textContent = money(sal.otherAllowances||0);
+    $('s-net').textContent    = money(sal.net);
+    $('s-daily').textContent  = moneyD(sal.daily);
+    $('f-housing-display').textContent = fmtD(sal.housing);
+    $('s-gross').textContent  = money(sal.totalGross);
+    $('s-gosi').textContent   = money(sal.gosi);
+  }
+
+  // ── Render budget tab ───────────────────────────────────
+  function renderBudget(res, state) {
+    const { bud } = res;
+    const b = state.budget;
+
+    if($('al-fixed-amt')) $('al-fixed-amt').textContent = money(bud.fixed);
+
+    const syncJar = (key, color) => {
+      const el = $('f-alloc-' + key);
+      if (el && document.activeElement !== el) el.value = b['amt' + key[0].toUpperCase() + key.slice(1)] || '';
+      const amt = bud[key] || 0;
+      const pct = bud.remainder > 0 ? Math.min(100, amt / bud.remainder * 100) : 0;
+      if($('jar-' + key + '-amt')) $('jar-' + key + '-amt').textContent = money(amt);
+      if($('jar-' + key + '-pct')) $('jar-' + key + '-pct').textContent = pct.toFixed(1) + '% من الفائض المتاح';
+      if($('jar-' + key + '-bar')) $('jar-' + key + '-bar').style.width = pct + '%';
+    };
+    syncJar('emerg');
+    syncJar('invest');
+    syncJar('entertainment');
+
+    if($('jar-surplus-amt')) $('jar-surplus-amt').textContent = money(bud.surplus);
+    if($('jar-over-warn'))   $('jar-over-warn').style.display = bud.overLimit ? 'block' : 'none';
+
+    const suggestedDaily = Math.max(0, bud.surplus) / 30;
+    if($('suggest-surplus-val')) $('suggest-surplus-val').textContent = money(bud.surplus);
+    if($('suggest-daily-val'))   $('suggest-daily-val').textContent   = money(suggestedDaily);
+  }
+
+  // ── Render obligations tab ──────────────────────────────
+  function renderObligations(res) {
+    const { obl } = res;
+    $('t-expenses').textContent = money(obl.totalExpenses);
+    $('t-loans').textContent    = money(obl.totalLoans);
+    $('t-insurance').textContent = money(obl.totalIns);
+    if ($('t-gym')) $('t-gym').textContent = money(obl.gymAmt);
+  }
+
+  // ── Render daily expense tracker ─────────────────────────
+  function renderDailyExpense(res, state) {
+    const { daily } = res;
+    if (!daily) return;
+    const limitInput = $('f-daily-limit');
+    if (limitInput && document.activeElement !== limitInput) limitInput.value = daily.limit || 0;
+
+    const spentDisplay = $('f-daily-spent-display');
+    if (spentDisplay) spentDisplay.textContent = fmtD(daily.spent || 0);
+
+    const remEl = $('daily-remaining-val');
+    if (remEl) {
+      remEl.textContent = money(daily.remaining);
+      remEl.style.color = daily.remaining >= 0 ? '#06b6d4' : 'var(--red)';
+    }
+    const carryEl = $('daily-carryover-val');
+    if (carryEl) carryEl.textContent = money(daily.overflow || 0);
+
+    const hint = $('daily-hint');
+    if (hint) {
+      if (daily.carryoverDebt > 0) {
+        hint.textContent = `الحد الأصلي ${money(daily.limit)} − خصم تجاوز الأمس ${money(daily.carryoverDebt)} = الحد الفعلي اليوم ${money(daily.effectiveLimit)}`;
+      } else {
+        hint.textContent = `الحد اليومي ${money(daily.limit)} ر بدون أي خصم سابق`;
+      }
+    }
+  }
+
+  // ── Render entries (expenses/loans) ─────────────────────
+  function renderList(type, arr) {
+    const list = $(type + '-list');
+    if (!list) return;
+    list.innerHTML = '';
+    arr.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 'entry-row';
+      row.innerHTML =
+        `<input type="text" value="${escHtml(item.name)}" placeholder="الاسم"
+          oninput="App.updateListItem('${type}',${i},'name',this.value)">` +
+        `<input type="number" value="${item.amount}" placeholder="المبلغ" min="0" step="50"
+          oninput="App.updateListItem('${type}',${i},'amount',+this.value)">` +
+        `<span class="unit">ريال</span>` +
+        `<button class="btn-rm" onclick="App.removeListItem('${type}',${i})">✕</button>`;
+      list.appendChild(row);
+    });
+  }
+
+  // ── Render insurance persons ────────────────────────────
+  function renderInsurance(ins) {
+    const block = $('ins-block');
+    if (!block) return;
+    block.innerHTML = '';
+    const count = ins.count;
+    $('ins-total-row').style.display = count === 0 ? 'none' : 'flex';
+
+    for (let i = 0; i < count; i++) {
+      const p = ins.persons[i] || { name: i === 0 ? 'الوالد' : 'الوالدة', amount: 350 };
+      const div = document.createElement('div');
+      div.className = 'ins-person';
+      div.innerHTML =
+        `<div class="ins-person-title">${count > 1 ? (i === 0 ? 'الأول' : 'الثاني') : 'المؤمَّن عليه'}</div>` +
+        `<div class="ins-fields">` +
+          `<input type="text" value="${escHtml(p.name)}" placeholder="الاسم"
+            oninput="App.updateInsurancePerson(${i},'name',this.value)">` +
+          `<input type="number" value="${p.amount}" placeholder="القسط" min="0" step="50"
+            oninput="App.updateInsurancePerson(${i},'amount',+this.value)">` +
+          `<span class="unit">ريال</span>` +
+        `</div>`;
+      block.appendChild(div);
+    }
+  }
+
+  // ── Render extras tab ───────────────────────────────────
+  function renderExtras(res, state) {
+    const { ev, ot, oc, proj } = res;
+
+    // Evening
+    $('evening-block').style.display = state.evening.enabled ? 'block' : 'none';
+    if (state.evening.enabled) {
+      $('ev-daily').textContent   = moneyInt(ev.daily);
+      $('ev-monthly').textContent = moneyInt(ev.monthly);
+    }
+
+    // OT days buttons
+    const otRow = $('ot-days-row');
+    if (otRow) {
+      otRow.innerHTML = '';
+      for (let d = 0; d <= 5; d++) {
+        const btn = document.createElement('button');
+        btn.className = 'ot-btn' + (d === state.overtime.days ? ' active' : '');
+        btn.textContent = d === 0 ? 'لا يوجد' : d + (d === 1 ? ' يوم' : ' أيام');
+        btn.onclick = () => App.setOTDays(d);
+        otRow.appendChild(btn);
+      }
+    }
+
+    // OT hours input
+    const otHoursInput = $('f-ot-hours');
+    if (otHoursInput && document.activeElement !== otHoursInput) {
+      otHoursInput.value = state.overtime.hours || 0;
+    }
+
+    $('ot-hourly').textContent  = moneyD(ot.additionalHourly);
+    $('ot-day').textContent     = moneyD(ot.dayValue);
+    $('ot-monthly').textContent = moneyD(ot.monthly);
+    $('ot-hint').textContent    =
+      `إجمالي ساعة: ${fmtD(ot.totalHourly)} · أساسي ساعة: ${fmtD(ot.basicHourly)} · ${state.overtime.days} أيام × 9 ساعات + ${state.overtime.hours || 0} ساعة إضافية`;
+
+    // ── On-Call ──
+    const ocState = state.oncall || { mode: 'no' };
+    const wkBlock = $('oncall-weekend-block');
+    const wlBlock = $('oncall-weeklong-block');
+    const totalRow = $('oncall-total-row');
+    if (wkBlock) wkBlock.style.display = ocState.mode === 'weekend'  ? 'block' : 'none';
+    if (wlBlock) wlBlock.style.display = ocState.mode === 'weeklong' ? 'block' : 'none';
+    if (totalRow) totalRow.style.display = ocState.mode !== 'no' ? 'flex' : 'none';
+
+    if (ocState.mode === 'weekend') {
+      ['thu','fri','sat'].forEach(d => {
+        const input = $('oc-' + d + '-calls');
+        if (input && document.activeElement !== input) {
+          input.value = ocState[d + 'Calls'] || 0;
+        }
+      });
+
+      $('oc-thu-hint').textContent = oc.thuCalls > 0
+        ? `مكالمة ← الساعة تُحسب بنصف قيمة يوم الأوفر تايم = ${money(oc.thuTotal)}`
+        : `بدون مكالمات ← 60 ر ثابتة`;
+
+      $('oc-fri-hint').textContent = oc.friCalls > 0
+        ? `${oc.friActive} فترة فيها مكالمات من 6 (نصف قيمة يوم الأوفر تايم لكل فترة) — باقي الفترات بدون قيمة = ${money(oc.friTotal)}`
+        : `بدون مكالمات ← 240 ر ثابتة لليوم كامل`;
+
+      $('oc-sat-hint').textContent = oc.satCalls > 0
+        ? `${oc.satActive} فترة فيها مكالمات من 6 (نصف قيمة يوم الأوفر تايم لكل فترة) — باقي الفترات بدون قيمة = ${money(oc.satTotal)}`
+        : `بدون مكالمات ← 240 ر ثابتة لليوم كامل`;
+
+      $('oc-fixed-val').textContent  = money(oc.fixedTotal||0);
+      $('oc-active-val').textContent = money(oc.activeTotal||0);
+      $('oc-weekend-hint').textContent =
+        `الخميس: ${money(oc.thuTotal||0)} · الجمعة: ${money(oc.friTotal||0)} · السبت: ${money(oc.satTotal||0)}`;
+      $('t-oncall').textContent = money(oc.monthly||0);
+    }
+
+    if (ocState.mode === 'weeklong') {
+      const weeksRow = $('oncall-weeks-row');
+      if (weeksRow) {
+        weeksRow.innerHTML = '';
+        for (let w = 0; w <= 5; w++) {
+          const btn = document.createElement('button');
+          btn.className = 'ot-btn' + (w === (ocState.weeks ?? 4) ? ' active' : '');
+          btn.textContent = w + (w === 1 ? ' أسبوع' : ' أسابيع');
+          btn.onclick = () => App.setOnCallWeeks(w);
+          weeksRow.appendChild(btn);
+        }
+      }
+      // Sync duration radios
+      document.querySelectorAll('input[name="oncall-duration"]').forEach(r => {
+        r.checked = (r.value === (ocState.extended ? 'extended' : 'normal'));
+      });
+      $('oc-week-price').textContent     = money(oc.weekPrice||0);
+      $('oc-weeklong-total').textContent = money(oc.monthly||0);
+      $('t-oncall').textContent          = money(oc.monthly||0);
+      const hintEl = $('oc-weeklong-hint');
+      if (hintEl) {
+        hintEl.textContent = ocState.extended
+          ? `${oc.weeks||0} أسابيع × 1,400 ر (السعر المرتفع بعد شهر استمرار)`
+          : `${oc.weeks||0} أسابيع × 700 ر — سيرتفع إلى 1,400 ر/أسبوع لو استمر الـ On-Call أكثر من شهر`;
+      }
+    }
+
+    // Sync mode radios
+    document.querySelectorAll('input[name="oncall"]').forEach(r => {
+      r.checked = (r.value === ocState.mode);
+    });
+
+    $('total-extra').textContent = money(res.extraIncome);
+  }
+
+  // ── Render summary tab ──────────────────────────────────
+  function renderSummary(res, state) {
+    const { sal, obl, extraIncome, dsrLimit, remaining } = res;
+
+    // Global sticky bar — visible on all tabs
+    const grbEl = $('grb-value');
+    if (grbEl) {
+      grbEl.textContent = money(Math.abs(remaining));
+      grbEl.className   = 'grb-value ' + (remaining >= 0 ? 'pos' : 'neg');
+    }
+
+    // Big number
+    const rhEl = $('rh-value');
+    if(rhEl) {
+      rhEl.textContent = money(Math.abs(remaining));
+      rhEl.className   = 'rh-value ' + (remaining >= 0 ? 'pos' : 'neg');
+    }
+    const rhSub = $('rh-sub');
+    if(rhSub) rhSub.textContent = remaining >= 0
+      ? `متاح · ${(remaining / sal.net * 100).toFixed(1)}% من صافي الراتب`
+      : `⚠ عجز بمقدار ${money(Math.abs(remaining))}`;
+
+    // صافي الراتب في صفحة الراتب فقط
+    const hNet = $('h-net');
+    if(hNet) {
+      hNet.textContent = money(sal.net);
+      hNet.style.background = '';
+      hNet.style.webkitBackgroundClip = '';
+      hNet.style.webkitTextFillColor = '';
+    }
+
+
+
+    // Table
+    $('st-net').textContent       = money(sal.net);
+    $('st-extra').textContent     = money(extraIncome);
+    $('st-expenses').textContent  = money(obl.totalExpenses);
+    $('st-loans').textContent     = money(obl.totalLoans);
+    $('st-ins').textContent       = money(obl.totalIns);
+    $('st-gym').textContent       = money(obl.gymAmt);
+    $('st-total-obl').textContent = money(obl.totalObl);
+    $('st-dsr').textContent       = money(dsrLimit);
+    $('st-remaining').textContent = money(remaining);
+
+    const resRow = $('st-result-row');
+    if (resRow) resRow.querySelector('span:last-child').style.color = remaining >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  // ── Gym UI ──────────────────────────────────────────────
+  function renderGym(state) {
+    const yes = state.gym.enabled;
+    $('gym-block').style.display     = yes ? 'block' : 'none';
+    $('gym-total-row').style.display = yes ? 'flex'  : 'none';
+    const radio = document.querySelector(`input[name="gym"][value="${yes ? 'yes' : 'no'}"]`);
+    if (radio) radio.checked = true;
+  }
+
+  // ── Utility ─────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+
+  // ── Render SMS expense tab ───────────────────────────────
+  function renderSMS(state) {
+    const log = state.smsLog || [];
+    const totalEl = $('sms-total');
+    const subEl   = $('sms-count-sub');
+    if (!totalEl) return; // tab not in DOM yet (shouldn't happen)
+
+    const debits = log.filter(e => e.type === 'debit');
+    const totalSpent = debits.reduce((s,e) => s + e.amount, 0);
+    totalEl.textContent = money(totalSpent);
+    subEl.textContent   = `${log.length} عملية مسجّلة`;
+
+    // ── Categories breakdown ──
+    const catMap = {};
+    debits.forEach(e => {
+      if (!catMap[e.category]) catMap[e.category] = { total: 0, count: 0, label: e.categoryLabel, color: e.categoryColor };
+      catMap[e.category].total += e.amount;
+      catMap[e.category].count += 1;
+    });
+    const catList = $('sms-categories-list');
+    const cats = Object.values(catMap).sort((a,b) => b.total - a.total);
+    if (cats.length === 0) {
+      catList.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px 0">لا توجد عمليات بعد</div>';
+    } else {
+      catList.innerHTML = cats.map(c => {
+        const pct = totalSpent > 0 ? (c.total / totalSpent * 100) : 0;
+        return `<div class="alloc-row">
+          <div class="alloc-left"><span class="dot" style="background:${c.color}"></span>
+            <div><div class="alloc-name">${c.label}</div><div class="alloc-pct">${c.count} عملية · ${pct.toFixed(0)}%</div></div>
+          </div>
+          <div class="alloc-amt" style="color:${c.color}">${money(c.total)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Transaction log ──
+    const logList = $('sms-log-list');
+    if (log.length === 0) {
+      logList.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px 0">لا توجد عمليات بعد</div>';
+    } else {
+      const sorted = [...log].sort((a,b) => new Date(b.addedAt) - new Date(a.addedAt));
+      logList.innerHTML = sorted.map((e,i) => {
+        const sign = e.type === 'credit' ? '+' : '−';
+        const color = e.type === 'credit' ? 'var(--green)' : 'var(--red)';
+        const origIndex = log.indexOf(e);
+        return `<div class="entry-row" style="align-items:center">
+          <div style="flex:1">
+            <div style="font-size:.85rem;font-weight:600">${escHtml(e.categoryLabel)}</div>
+            <div style="font-size:.72rem;color:var(--muted)">${e.merchant ? escHtml(e.merchant) : ''}${e.dateStr ? ' · ' + e.dateStr : ''}</div>
+          </div>
+          <div style="font-weight:700;color:${color};white-space:nowrap">${sign} ${money(e.amount)}</div>
+          <button class="btn-rm" onclick="App.removeSMSEntry(${origIndex})">✕</button>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Master render ────────────────────────────────────────
+  function render(res, state) {
+    renderSalary(res, state);
+    renderBudget(res, state);
+    renderObligations(res);
+    renderDailyExpense(res, state);
+    renderList('expenses', state.expenses);
+    renderList('loans', state.loans);
+    renderInsurance(state.insurance);
+    renderGym(state);
+    renderExtras(res, state);
+    renderSummary(res, state);
+    renderSMS(state);
+  }
+
+  // ── Render monthly reports tab ───────────────────────────
+  function renderReports(state) {
+    const list = $('reports-list');
+    if (!list) return;
+    const log = state.smsLog || [];
+    if (!log.length) {
+      list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:30px 0">لا توجد بيانات بعد · أضف مصروفات من قسم المصروفات</div>';
+      return;
+    }
+
+    // Group debits by year-month
+    const months = {};
+    log.forEach(e => {
+      if (e.type !== 'debit' || !e.addedAt) return;
+      const ym = e.addedAt.slice(0, 7); // YYYY-MM
+      if (!months[ym]) months[ym] = { total: 0, cats: {}, entries: [] };
+      months[ym].total += Number(e.amount) || 0;
+      months[ym].entries.push(e);
+      const key = e.category || 'other';
+      if (!months[ym].cats[key]) months[ym].cats[key] = { label: e.categoryLabel || '📦 أخرى', total: 0, count: 0, color: e.categoryColor || '#7b87aa' };
+      months[ym].cats[key].total += Number(e.amount) || 0;
+      months[ym].cats[key].count += 1;
+    });
+
+    const sortedMonths = Object.keys(months).sort().reverse();
+    if (!sortedMonths.length) {
+      list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:30px 0">لا توجد مصروفات مسجلة بعد</div>';
+      return;
+    }
+
+    const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+    list.innerHTML = sortedMonths.map(ym => {
+      const [yr, mo] = ym.split('-');
+      const label = monthNames[parseInt(mo) - 1] + ' ' + yr;
+      const d = months[ym];
+      const cats = Object.values(d.cats).sort((a,b) => b.total - a.total);
+
+      const catsHTML = cats.map(c => `
+        <div class="report-cat-row">
+          <div>
+            <div class="report-cat-name">${escHtml(c.label)}</div>
+            <div class="report-cat-count">${c.count} عملية</div>
+          </div>
+          <div class="report-cat-amt" style="color:${c.color}">${money(c.total)}</div>
+        </div>`).join('');
+
+      return `<div class="report-month" id="rm-${ym}">
+        <div class="report-month-header" onclick="toggleReport('${ym}')">
+          <div>
+            <div class="report-month-title">${label}</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${d.entries.length} عملية</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="report-month-total">${money(d.total)}</span>
+            <span class="report-month-arrow" id="arrow-${ym}">▼</span>
+          </div>
+        </div>
+        <div class="report-month-body" id="body-${ym}">
+          ${catsHTML}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Master render ────────────────────────────────────────
+  function render(res, state) {
+    renderSalary(res, state);
+    renderBudget(res, state);
+    renderObligations(res);
+    renderDailyExpense(res, state);
+    renderList('expenses', state.expenses);
+    renderList('loans', state.loans);
+    renderInsurance(state.insurance);
+    renderGym(state);
+    renderExtras(res, state);
+    renderSummary(res, state);
+    renderSMS(state);
+    renderReports(state);
+    // Sync projection if on that tab
+    if (document.getElementById('tab-projection')?.classList.contains('active')) {
+      App.updateProjection && App.updateProjection();
+    }
+  }
+
+  return { render, renderList, renderInsurance, renderGym, renderSMS, fmt, money };
+})();
+
+
+/**
+ * app.js — Application controller
+ * Owns state, handles events, calls Calc → UI pipeline
+ */
+
+const App = (() => {
+
+  let state = DB.load();
+
+  // ── Core pipeline ───────────────────────────────────────
+  function run() {
+    const res = Calc.run(state);
+    UI.render(res, state);
+    DB.save(state); // حفظ تلقائي عند كل تغيير
+  }
+
+  // ── State updaters ──────────────────────────────────────
+  function updateSalary(field, value) {
+    state.salary[field] = Number(value);
+    run();
+  }
+
+  function addAllowance() {
+    if (!state.salary.allowances) state.salary.allowances = [];
+    state.salary.allowances.push({ id: Date.now(), name: 'بدل جديد', amount: 0 });
+    renderAllowances();
+    run();
+  }
+
+  function removeAllowance(i) {
+    state.salary.allowances.splice(i, 1);
+    renderAllowances();
+    run();
+  }
+
+  function updateAllowance(i, field, value) {
+    state.salary.allowances[i][field] = field === 'amount' ? Number(value) : value;
+    run();
+  }
+
+  function renderAllowances() {
+    const list = document.getElementById('allowances-list');
+    if (!list) return;
+    const arr = state.salary.allowances || [];
+    list.innerHTML = '';
+    arr.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 'entry-row';
+      row.innerHTML =
+        `<input type="text" value="${item.name}" placeholder="اسم البدل"
+          oninput="App.updateAllowance(${i},'name',this.value)">` +
+        `<input type="number" value="${item.amount}" placeholder="المبلغ" min="0" step="50"
+          oninput="App.updateAllowance(${i},'amount',+this.value)">` +
+        `<span class="unit">ريال</span>` +
+        `<button class="btn-rm" onclick="App.removeAllowance(${i})">✕</button>`;
+      list.appendChild(row);
+    });
+  }
+
+  function updateBudget(field, value) {
+    state.budget[field] = Number(value);
+    run();
+  }
+
+  function updateJarIcon(key, value) {
+    if (!state.budget.jarIcons) state.budget.jarIcons = {};
+    state.budget.jarIcons[key] = value;
+    DB.save(state);
+  }
+
+  function updateAllocAmt(key, value) {
+    const field = 'amt' + key[0].toUpperCase() + key.slice(1);
+    state.budget[field] = Math.max(0, Number(value) || 0);
+    run();
+  }
+
+  function stepSlider(key, delta) {
+    const field = 'pct' + key.charAt(0).toUpperCase() + key.slice(1);
+    const current = Number(state.budget[field]) || 0;
+    const next = Math.min(100, Math.max(0, current + delta));
+    state.budget[field] = next;
+    const sl = document.getElementById('sl-' + key);
+    if (sl) sl.value = next;
+    run();
+  }
+
+  function updateListItem(type, index, field, value) {
+    state[type][index][field] = field === 'amount' ? Number(value) : value;
+    run();
+  }
+
+  function addRow(type) {
+    const defaults = { expenses: { name: 'التزام جديد', amount: 0 }, loans: { name: 'قرض جديد', amount: 0 } };
+    state[type].push({ id: Date.now(), ...defaults[type] });
+    run();
+  }
+
+  function removeListItem(type, index) {
+    state[type].splice(index, 1);
+    run();
+  }
+
+  function updateInsuranceCount(count) {
+    state.insurance.count = Number(count);
+    // Ensure enough persons slots
+    while (state.insurance.persons.length < count) {
+      state.insurance.persons.push({ name: state.insurance.persons.length === 0 ? 'الوالد' : 'الوالدة', amount: 350 });
+    }
+    UI.renderInsurance(state.insurance);
+    run();
+  }
+
+  function updateInsurancePerson(index, field, value) {
+    if (!state.insurance.persons[index]) {
+      state.insurance.persons[index] = { name: '', amount: 0 };
+    }
+    state.insurance.persons[index][field] = field === 'amount' ? Number(value) : value;
+    run();
+  }
+
+  function setGym(enabled) {
+    state.gym.enabled = enabled;
+    UI.renderGym(state);
+    run();
+  }
+
+  function updateGymAmount(value) {
+    state.gym.amount = Number(value);
+    run();
+  }
+
+  function setEvening(enabled) {
+    state.evening.enabled = enabled;
+    run();
+  }
+
+  function setOTDays(days) {
+    state.overtime.days = days;
+    run();
+  }
+
+  function setOTHours(value) {
+    state.overtime.hours = Math.max(0, Number(value) || 0);
+    run();
+  }
+
+  // ── Daily expense tracking (auto from SMS log) ─────────────
+  function todayStr(date) {
+    return (date || new Date()).toISOString().slice(0, 10); // YYYY-MM-DD
+  }
+
+  function spentOnDate(dateStr) {
+    if (!state.smsLog || !state.smsLog.length) return 0;
+    return state.smsLog
+      .filter(e => e.type === 'debit' && e.addedAt && e.addedAt.slice(0, 10) === dateStr)
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }
+
+  function checkDailyRollover() {
+    if (!state.dailyExpense) state.dailyExpense = { limit: 0, carryoverDebt: 0, lastDate: null };
+    const d = state.dailyExpense;
+    const today = todayStr();
+    if (d.lastDate && d.lastDate !== today) {
+      // يوم جديد: نحسب تجاوز الأمس من سجل SMS الفعلي ليوم الأمس
+      const prevEffectiveLimit = Math.max(0, (d.limit || 0) - (d.carryoverDebt || 0));
+      const prevSpent = spentOnDate(d.lastDate);
+      const prevOverflow = prevSpent > prevEffectiveLimit ? (prevSpent - prevEffectiveLimit) : 0;
+      d.carryoverDebt = prevOverflow;
+
+      if (prevOverflow > 0) {
+        showDailyLimitModal(prevOverflow, prevSpent, prevEffectiveLimit, true);
+      }
+    }
+    d.lastDate = today;
+  }
+
+
+  // ── Salary projection ────────────────────────────────────
+  function initProjectionYears() { /* no-op: replaced by text input */ }
+
+  function updateProjection() {
+    const sal = Calc.salary(state.salary);
+    const rate = Math.max(0, Number(document.getElementById('proj-rate')?.value) || 0) / 100;
+    const years = Math.max(1, Math.min(40, Number(document.getElementById('proj-years')?.value) || 5));
+    const transport = state.salary.transportAllowance || 0;
+    const otherAllowances = sal.otherAllowances || 0;
+
+    // Update current display
+    const cbEl = document.getElementById('proj-current-basic');
+    const ctEl = document.getElementById('proj-current-total');
+    if (cbEl) cbEl.textContent = UI.money(sal.totalBasic);
+    if (ctEl) ctEl.textContent = UI.money(sal.net);
+
+    // Build table
+    const wrap = document.getElementById('proj-table-wrap');
+    const table = document.getElementById('proj-table');
+    if (!wrap || !table) return;
+    wrap.style.display = 'block';
+
+    let rows = `<div class="proj-row header">
+      <div class="proj-cell">السنة</div>
+      <div class="proj-cell">الأساسي</div>
+      <div class="proj-cell">الزيادة</div>
+      <div class="proj-cell">الصافي (بعد التأمينات)</div>
+    </div>`;
+
+    let basic = sal.totalBasic;
+    for (let y = 1; y <= years; y++) {
+      const increase = basic * rate;
+      const newBasic = basic + increase;
+      const newHousing = newBasic * 0.25;
+      const newGosi = (newBasic + newHousing) * 0.0975;
+      const newNet = (newBasic + newHousing - newGosi) + transport + otherAllowances;
+      const isCurrent = y === 0;
+
+      rows += `<div class="proj-row${y === 1 ? ' current' : ''}">
+        <div class="proj-cell muted">سنة ${y}</div>
+        <div class="proj-cell blue">${UI.money(newBasic)}</div>
+        <div class="proj-cell green">+ ${UI.money(increase)}</div>
+        <div class="proj-cell blue">${UI.money(newNet)}</div>
+      </div>`;
+
+      basic = newBasic;
+    }
+
+    table.innerHTML = rows;
+  }
+
+  function clearProjectionTable() {
+    const wrap = document.getElementById('proj-table-wrap');
+    if (wrap) wrap.style.display = 'none';
+    const rateEl = document.getElementById('proj-rate');
+    if (rateEl) rateEl.value = '';
+    const yearsEl = document.getElementById('proj-years');
+    if (yearsEl) yearsEl.value = '';
+  }
+
+  function updateDailyLimit(value) {
+    checkDailyRollover();
+    state.dailyExpense.limit = Math.max(0, Number(value) || 0);
+    run();
+    checkTodayOverflow();
+  }
+
+  function checkTodayOverflow() {
+    const d = state.dailyExpense;
+    if (!d) return;
+    const effectiveLimit = Math.max(0, (d.limit || 0) - (d.carryoverDebt || 0));
+    const spentToday = spentOnDate(todayStr());
+    if (spentToday > effectiveLimit && effectiveLimit > 0) {
+      // Only alert once per session per threshold cross — simple guard using a flag
+      if (!d._alertedToday || d._alertedAmount !== spentToday) {
+        d._alertedToday = true;
+        d._alertedAmount = spentToday;
+        showDailyLimitModal(spentToday - effectiveLimit, spentToday, effectiveLimit, false);
+      }
+    }
+  }
+
+  function showDailyLimitModal(overflow, spent, limit, isYesterday) {
+    const modal = document.getElementById('daily-limit-modal');
+    const text  = document.getElementById('daily-limit-modal-text');
+    if (text) {
+      const dayLabel = isYesterday ? 'بالأمس' : 'اليوم';
+      text.innerHTML = `صرفت <strong>${UI.money(spent)}</strong> ${dayLabel} من حد <strong>${UI.money(limit)}</strong>.<br>الزيادة: <strong style="color:var(--red)">${UI.money(overflow)}</strong>`;
+    }
+    if (modal) modal.style.display = 'flex';
+  }
+
+  // ── On-Call ──────────────────────────────────────────────
+  function setOnCallMode(mode) {
+    if (!state.oncall) state.oncall = { mode: 'no', thuCalls: 0, friCalls: 0, satCalls: 0, extended: false, weeks: 4 };
+    state.oncall.mode = mode;
+    run();
+  }
+
+  function setOnCallDayCalls(day, n) {
+    const field = day + 'Calls'; // thuCalls | friCalls | satCalls
+    state.oncall[field] = Math.max(0, Number(n) || 0);
+    run();
+  }
+
+  function setOnCallWeeks(w) {
+    state.oncall.weeks = w;
+    run();
+  }
+
+  function setOnCallDuration(d) {
+    state.oncall.extended = (d === 'extended');
+    run();
+  }
+
+  // ── Persistence ─────────────────────────────────────────
+  function save() {
+    // Sync slider values into state before saving
+    state.budget.pctEmerg  = Number(document.getElementById('sl-emerg')?.value  || state.budget.pctEmerg);
+    state.budget.pctInvest = Number(document.getElementById('sl-invest')?.value || state.budget.pctInvest);
+
+    const ok = DB.save(state);
+    const toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = ok ? 'تم الحفظ ✅' : 'تعذّر الحفظ ⚠';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+  }
+
+  // ── Tab navigation ───────────────────────────────────────
+  function initTabs() {
+    const tabs  = document.querySelectorAll('.tab');
+    const pages = document.querySelectorAll('.page');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        tabs.forEach(t  => t.classList.remove('active'));
+        pages.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + target)?.classList.add('active');
+        if (target === 'projection') App.updateProjection();
+      });
+    });
+  }
+
+  // ── Input bindings ───────────────────────────────────────
+  function initInputs() {
+    const salaryFields = ['basic', 'transportAllowance'];
+    const salaryIds    = ['f-basic', 'f-transport'];
+    salaryIds.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = state.salary[salaryFields[i]];
+      el.addEventListener('input', () => updateSalary(salaryFields[i], el.value));
+    });
+
+    // Sliders
+    ['fixed', 'emerg', 'invest', 'entertainment'].forEach(key => {
+      const sl = document.getElementById('sl-' + key);
+      if (!sl) return;
+      sl.value = state.budget['pct' + key.charAt(0).toUpperCase() + key.slice(1)];
+      sl.addEventListener('input', () => {
+        updateBudget('pct' + key.charAt(0).toUpperCase() + key.slice(1), sl.value);
+      });
+    });
+
+    // Insurance radios
+    document.querySelectorAll('input[name="parents"]').forEach(r => {
+      r.checked = (Number(r.value) === state.insurance.count);
+      r.addEventListener('change', () => updateInsuranceCount(r.value));
+    });
+
+    // Gym
+    document.querySelectorAll('input[name="gym"]').forEach(r => {
+      r.checked = (r.value === (state.gym.enabled ? 'yes' : 'no'));
+      r.addEventListener('change', () => setGym(r.value === 'yes'));
+    });
+    const gymInput = document.getElementById('f-gym');
+    if (gymInput) {
+      gymInput.value = state.gym.amount;
+      gymInput.addEventListener('input', () => updateGymAmount(gymInput.value));
+    }
+
+    // Evening
+    document.querySelectorAll('input[name="evening"]').forEach(r => {
+      r.checked = (r.value === (state.evening.enabled ? 'yes' : 'no'));
+      r.addEventListener('change', () => setEvening(r.value === 'yes'));
+    });
+
+    // Save buttons
+    ['btn-save', 'btn-save2'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', save);
+    });
+    document.getElementById('btn-pdf')?.addEventListener('click', () => window.print());
+  }
+
+  // ── Boot ─────────────────────────────────────────────────
+  function init() {
+    // Hide splash
+    setTimeout(() => {
+      const splash = document.getElementById('splash');
+      const app    = document.getElementById('app');
+      if (splash) splash.classList.add('hide');
+      if (app)    app.style.display = 'flex';
+      setTimeout(() => { if (splash) splash.style.display = 'none'; }, 400);
+    }, 800);
+
+    initTabs();
+    initInputs();
+    App.renderAllowances();
+    checkDailyRollover();
+    run();
+    checkTodayOverflow();
+    App.updateProjection();
+
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  // ── Reset (extras only) ─────────────────────────────────
+  function resetExtras() {
+    // مسح كل شيء ما عدا صفحة الراتب (بما فيها البدلات الأخرى)
+    state.expenses  = [];
+    state.loans     = [];
+    state.insurance = { count: 0, persons: [] };
+    state.gym       = { enabled: false, amount: 0 };
+    state.evening   = { enabled: false };
+    state.overtime  = { days: 0, hours: 0 };
+    state.oncall    = { mode: 'no', thuCalls: 0, friCalls: 0, satCalls: 0, extended: false, weeks: 4 };
+    state.dailyExpense = { limit: 0, carryoverDebt: 0, lastDate: state.dailyExpense ? state.dailyExpense.lastDate : null };
+    state.budget    = { pctFixed: 45, amtEmerg: 0, amtInvest: 0, amtEntertainment: 0 };
+
+    // Sync UI
+    App.renderAllowances();
+    UI.renderList('expenses', state.expenses);
+    UI.renderList('loans', state.loans);
+    UI.renderInsurance(state.insurance);
+    UI.renderGym(state);
+
+    // Radios
+    document.querySelectorAll('input[name="parents"]').forEach(r => r.checked = r.value === '0');
+    document.querySelectorAll('input[name="gym"]').forEach(r => r.checked = r.value === 'no');
+    document.querySelectorAll('input[name="evening"]').forEach(r => r.checked = r.value === 'no');
+    document.querySelectorAll('input[name="oncall"]').forEach(r => r.checked = r.value === 'no');
+    document.querySelectorAll('input[name="oncall-duration"]').forEach(r => r.checked = r.value === 'normal');
+
+    // Sliders
+    ['emerg','invest','entertainment'].forEach(k => {
+      const sl = document.getElementById('sl-' + k);
+      if(sl) sl.value = 0;
+    });
+
+    // OT hours input
+    const otHoursEl = document.getElementById('f-ot-hours');
+    if (otHoursEl) otHoursEl.value = 0;
+
+    // On-Call day inputs
+    ['oc-thu-calls','oc-fri-calls','oc-sat-calls'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = 0;
+    });
+
+    // On-Call blocks — إخفاء بشكل صريح
+    const wkBlock = document.getElementById('oncall-weekend-block');
+    const wlBlock = document.getElementById('oncall-weeklong-block');
+    const totalRow = document.getElementById('oncall-total-row');
+    if (wkBlock)  wkBlock.style.display  = 'none';
+    if (wlBlock)  wlBlock.style.display  = 'none';
+    if (totalRow) totalRow.style.display = 'none';
+
+    // Evening block
+    const eveningBlock = document.getElementById('evening-block');
+    if (eveningBlock) eveningBlock.style.display = 'none';
+
+    // Daily limit input
+    const dailyLimitEl = document.getElementById('f-daily-limit');
+    if (dailyLimitEl) dailyLimitEl.value = 0;
+
+    run();
+
+    const toast = document.getElementById('toast');
+    toast.textContent = 'تم المسح ✅';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  // expose
+  window._resetExtras = resetExtras;
+
+  // Public API (called from inline HTML handlers)
+  // ── SMS expense tracking ─────────────────────────────────
+  function addSMSEntry(entry) {
+    if (!state.smsLog) state.smsLog = [];
+    state.smsLog.unshift(entry);
+    DB.save(state);
+    run();
+  }
+
+  function parseSMS() {
+    const input = document.getElementById('sms-input');
+    const resultBox = document.getElementById('sms-parse-result');
+    if (!input || !input.value.trim()) return;
+
+    const parsed = SMS.parse(input.value);
+
+    if (!parsed) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = 'rgba(239,68,68,.1)';
+      resultBox.style.border = '1px solid var(--red)';
+      resultBox.style.color = 'var(--red)';
+      resultBox.textContent = '⚠ تعذّر استخراج المبلغ من هذه الرسالة. تأكد من لصق الرسالة كاملة.';
+      return;
+    }
+
+    if (!state.smsLog) state.smsLog = [];
+    state.smsLog.push(parsed);
+
+    checkDailyRollover();
+    run();
+    if (parsed.type === 'debit') checkTodayOverflow();
+
+    resultBox.style.display = 'block';
+    resultBox.style.background = 'rgba(6,201,160,.1)';
+    resultBox.style.border = '1px solid var(--green)';
+    resultBox.style.color = 'var(--green)';
+    const sign = parsed.type === 'credit' ? 'إيداع' : 'سحب';
+    resultBox.innerHTML = `✅ تم رصد ${sign} بمبلغ <strong>${UI.money(parsed.amount)}</strong> · التصنيف: ${parsed.categoryLabel}`;
+
+    input.value = '';
+
+    setTimeout(() => { resultBox.style.display = 'none'; }, 4000);
+  }
+
+  function removeSMSEntry(index) {
+    state.smsLog.splice(index, 1);
+    run();
+  }
+
+  function clearSMSLog() {
+    if (!state.smsLog || state.smsLog.length === 0) return;
+    state.smsLog = [];
+    run();
+    const toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = 'تم مسح السجل ✅';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+  }
+
+  return {
+    updateListItem, addRow, removeListItem,
+    updateInsurancePerson, updateInsuranceCount,
+    setOTDays, setOTHours,
+    addAllowance, removeAllowance, updateAllowance,
+    renderAllowances, save,
+    setGym, updateGymAmount, setEvening,
+    updateBudget,
+    parseSMS, removeSMSEntry, clearSMSLog,
+    setOnCallMode, setOnCallDayCalls, setOnCallWeeks, setOnCallDuration,
+    updateDailyLimit, stepSlider, updateAllocAmt, updateJarIcon,
+    getState: function() { return state; },
+    addSMSEntry,
+    updateProjection, clearProjectionTable, initProjectionYears
+  };
+})();
+
+// Global helpers called from HTML
+function addRow(type)            { App.addRow(type); }
+function updateInsurance()       {
+  const val = document.querySelector('input[name="parents"]:checked')?.value || '2';
+  App.updateInsuranceCount(val);
+}
+function onSlider() {
+  ['fixed','emerg','invest','entertainment'].forEach(k => {
+    const sl = document.getElementById('sl-' + k);
+    if (sl) sl.dispatchEvent(new Event('input'));
+  });
+}
+
+</script>
+
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  const sw = atob('LyoqCiAqIHN3LmpzIOKAlCBTZXJ2aWNlIFdvcmtlcgogKiBDYWNoZS1maXJzdCBzdHJhdGVneSBmb3IgZnVsbCBvZmZsaW5lIHN1cHBvcnQKICovCgpjb25zdCBDQUNIRSA9ICd5YXNlZXItdjEnOwpjb25zdCBBU1NFVFMgPSBbCiAgJy8nLAogICcvaW5kZXguaHRtbCcsCiAgJy9jc3MvbWFpbi5jc3MnLAogICcvanMvZGIuanMnLAogICcvanMvY2FsYy5qcycsCiAgJy9qcy91aS5qcycsCiAgJy9qcy9hcHAuanMnLAogICcvbWFuaWZlc3QuanNvbicsCiAgJ2h0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9SUJNK1BsZXgrU2FucytBcmFiaWM6d2dodEAzMDA7NDAwOzUwMDs2MDA7NzAwOzgwMCZkaXNwbGF5PXN3YXAnCl07CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2luc3RhbGwnLCBlID0+IHsKICBlLndhaXRVbnRpbCgKICAgIGNhY2hlcy5vcGVuKENBQ0hFKS50aGVuKGMgPT4gYy5hZGRBbGwoQVNTRVRTKSkudGhlbigoKSA9PiBzZWxmLnNraXBXYWl0aW5nKCkpCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2FjdGl2YXRlJywgZSA9PiB7CiAgZS53YWl0VW50aWwoCiAgICBjYWNoZXMua2V5cygpLnRoZW4oa2V5cyA9PgogICAgICBQcm9taXNlLmFsbChrZXlzLmZpbHRlcihrID0+IGsgIT09IENBQ0hFKS5tYXAoayA9PiBjYWNoZXMuZGVsZXRlKGspKSkKICAgICkudGhlbigoKSA9PiBzZWxmLmNsaWVudHMuY2xhaW0oKSkKICApOwp9KTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcignZmV0Y2gnLCBlID0+IHsKICBlLnJlc3BvbmRXaXRoKAogICAgY2FjaGVzLm1hdGNoKGUucmVxdWVzdCkudGhlbihjYWNoZWQgPT4gY2FjaGVkIHx8IGZldGNoKGUucmVxdWVzdCkudGhlbihyZXMgPT4gewogICAgICBpZiAocmVzICYmIHJlcy5zdGF0dXMgPT09IDIwMCAmJiBlLnJlcXVlc3QubWV0aG9kID09PSAnR0VUJykgewogICAgICAgIGNvbnN0IGNsb25lID0gcmVzLmNsb25lKCk7CiAgICAgICAgY2FjaGVzLm9wZW4oQ0FDSEUpLnRoZW4oYyA9PiBjLnB1dChlLnJlcXVlc3QsIGNsb25lKSk7CiAgICAgIH0KICAgICAgcmV0dXJuIHJlczsKICAgIH0pKQogICk7Cn0pOwo=');
+  const blob = new Blob([sw], {type:'application/javascript'});
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+})();
+</script>
+<script>
+
+function applyEmoji(em) {
+  var key = window._jarKey;
+  if (!key) return;
+  var btn = document.getElementById('jar-' + key + '-icon-btn');
+  if (btn) btn.textContent = em;
+  App.updateJarIcon && App.updateJarIcon(key, em);
+  document.getElementById('emoji-modal').style.display = 'none';
+}
+
+
+
+
+
+
+
+
+function openResetModal() {
+  const m = document.getElementById('reset-modal');
+  m.style.display = 'flex';
+}
+function closeResetModal() {
+  document.getElementById('reset-modal').style.display = 'none';
+}
+function confirmReset() {
+  closeResetModal();
+  window._resetExtras && window._resetExtras();
+}
+document.getElementById('btn-reset')?.addEventListener('click', openResetModal);
+// Also close on backdrop click
+document.getElementById('reset-modal')?.addEventListener('click', function(e){
+  if(e.target === this) closeResetModal();
+});
+
+function closeDailyLimitModal() {
+  document.getElementById('daily-limit-modal').style.display = 'none';
+}
+document.getElementById('daily-limit-modal')?.addEventListener('click', function(e){
+  if(e.target === this) closeDailyLimitModal();
+});
+
+function toggleReport(ym) {
+  const body  = document.getElementById('body-'  + ym);
+  const arrow = document.getElementById('arrow-' + ym);
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', open);
+}
+</script>
+
+<div id="emoji-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:flex-end">
+  <div style="background:var(--card);border-radius:20px 20px 0 0;padding:18px 16px 30px;width:100%;max-height:65vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-weight:700;color:var(--text)">اختر أيقونة</span>
+      <button onclick="document.getElementById('emoji-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px"><button onclick="applyEmoji('💰')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💰</button><button onclick="applyEmoji('💵')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💵</button><button onclick="applyEmoji('💳')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💳</button><button onclick="applyEmoji('🏦')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏦</button><button onclick="applyEmoji('💎')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💎</button><button onclick="applyEmoji('📈')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">📈</button><button onclick="applyEmoji('📊')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">📊</button><button onclick="applyEmoji('🪙')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🪙</button><button onclick="applyEmoji('💹')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💹</button><button onclick="applyEmoji('🏧')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏧</button><button onclick="applyEmoji('🏠')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏠</button><button onclick="applyEmoji('🏡')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏡</button><button onclick="applyEmoji('🛒')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🛒</button><button onclick="applyEmoji('🛍')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🛍</button><button onclick="applyEmoji('🧾')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🧾</button><button onclick="applyEmoji('⚡')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">⚡</button><button onclick="applyEmoji('💡')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💡</button><button onclick="applyEmoji('💧')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💧</button><button onclick="applyEmoji('🔑')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🔑</button><button onclick="applyEmoji('🚪')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🚪</button><button onclick="applyEmoji('🚗')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🚗</button><button onclick="applyEmoji('✈️')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">✈️</button><button onclick="applyEmoji('🚕')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🚕</button><button onclick="applyEmoji('⛽')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">⛽</button><button onclick="applyEmoji('🚌')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🚌</button><button onclick="applyEmoji('🛵')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🛵</button><button onclick="applyEmoji('🚂')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🚂</button><button onclick="applyEmoji('🚢')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🚢</button><button onclick="applyEmoji('🏍')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏍</button><button onclick="applyEmoji('🚁')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🚁</button><button onclick="applyEmoji('🍔')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🍔</button><button onclick="applyEmoji('☕')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">☕</button><button onclick="applyEmoji('🍕')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🍕</button><button onclick="applyEmoji('🍱')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🍱</button><button onclick="applyEmoji('🥗')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🥗</button><button onclick="applyEmoji('🍜')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🍜</button><button onclick="applyEmoji('🍣')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🍣</button><button onclick="applyEmoji('🧃')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🧃</button><button onclick="applyEmoji('🥤')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🥤</button><button onclick="applyEmoji('🍰')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🍰</button><button onclick="applyEmoji('💊')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💊</button><button onclick="applyEmoji('🏥')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏥</button><button onclick="applyEmoji('🏋️')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏋️</button><button onclick="applyEmoji('⚽')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">⚽</button><button onclick="applyEmoji('🏊')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏊</button><button onclick="applyEmoji('🧘')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🧘</button><button onclick="applyEmoji('🎽')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎽</button><button onclick="applyEmoji('🩺')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🩺</button><button onclick="applyEmoji('💪')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💪</button><button onclick="applyEmoji('🥊')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🥊</button><button onclick="applyEmoji('🎮')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎮</button><button onclick="applyEmoji('🎬')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎬</button><button onclick="applyEmoji('🎵')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎵</button><button onclick="applyEmoji('🎸')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎸</button><button onclick="applyEmoji('📚')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">📚</button><button onclick="applyEmoji('🎯')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎯</button><button onclick="applyEmoji('🎨')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎨</button><button onclick="applyEmoji('🎭')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎭</button><button onclick="applyEmoji('🎪')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎪</button><button onclick="applyEmoji('🎲')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎲</button><button onclick="applyEmoji('🌴')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🌴</button><button onclick="applyEmoji('🏖')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏖</button><button onclick="applyEmoji('🗺')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🗺</button><button onclick="applyEmoji('🎡')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎡</button><button onclick="applyEmoji('🏕')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏕</button><button onclick="applyEmoji('🌍')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🌍</button><button onclick="applyEmoji('🗼')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🗼</button><button onclick="applyEmoji('🎠')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎠</button><button onclick="applyEmoji('⛺')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">⛺</button><button onclick="applyEmoji('🎢')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎢</button><button onclick="applyEmoji('📝')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">📝</button><button onclick="applyEmoji('💼')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💼</button><button onclick="applyEmoji('🎓')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🎓</button><button onclick="applyEmoji('📱')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">📱</button><button onclick="applyEmoji('💻')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💻</button><button onclick="applyEmoji('🖥')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🖥</button><button onclick="applyEmoji('📷')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">📷</button><button onclick="applyEmoji('🔬')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🔬</button><button onclick="applyEmoji('🏆')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🏆</button><button onclick="applyEmoji('🥇')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🥇</button><button onclick="applyEmoji('🛡')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🛡</button><button onclick="applyEmoji('🔥')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🔥</button><button onclick="applyEmoji('⭐')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">⭐</button><button onclick="applyEmoji('💫')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">💫</button><button onclick="applyEmoji('✨')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">✨</button><button onclick="applyEmoji('🌟')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🌟</button><button onclick="applyEmoji('🌙')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🌙</button><button onclick="applyEmoji('☀️')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">☀️</button><button onclick="applyEmoji('🌈')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🌈</button><button onclick="applyEmoji('🕌')" style="font-size:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent">🕌</button></div>
+  </div>
+</div>
+
+<!-- AI Assistant Float Button -->
+<button id="ai-fab" onclick="openAIChat()" style="
+  position:fixed; bottom:24px; left:20px; z-index:1000;
+  width:56px; height:56px; border-radius:50%;
+  background:linear-gradient(135deg,#3b6ff0,#06c9a0);
+  border:none; color:#fff; font-size:1.5rem; cursor:pointer;
+  box-shadow:0 4px 20px rgba(59,111,240,.4);
+  display:flex; align-items:center; justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  transition: transform .2s;
+">🤖</button>
+
+<!-- AI Chat Modal -->
+<div id="ai-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:flex-end">
+  <div style="background:var(--card);border-radius:24px 24px 0 0;width:100%;height:85vh;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b6ff0,#06c9a0);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div>
+        <div>
+          <div style="font-weight:700;font-size:.95rem;color:var(--text)">مساعد يسير</div>
+          <div style="font-size:.7rem;color:var(--green)">● متصل</div>
+        </div>
+      </div>
+      <button onclick="closeAIChat()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+
+    <!-- Messages -->
+    <div id="ai-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div class="ai-msg bot">مرحباً! أنا مساعدك المالي الشخصي. اسألني عن راتبك، مصاريفك، أو وضعك المالي — وسأجاوبك بناءً على بياناتك الفعلية. 💰</div>
+    </div>
+
+    <!-- Quick questions -->
+    <div id="ai-quick" style="padding:8px 16px;display:flex;gap:8px;overflow-x:auto;flex-shrink:0;scrollbar-width:none">
+      <button class="ai-quick-btn" onclick="askAI('وين راحت فلوسي هذا الشهر؟')">📊 وين راحت فلوسي؟</button>
+      <button class="ai-quick-btn" onclick="askAI('كيف وضعي المالي؟')">💡 كيف وضعي؟</button>
+      <button class="ai-quick-btn" onclick="askAI('كم أقدر أوفر شهرياً؟')">💰 كم أقدر أوفر؟</button>
+      <button class="ai-quick-btn" onclick="askAI('ايش التزاماتي الشهرية؟')">💳 التزاماتي</button>
+    </div>
+
+    <!-- Input -->
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;padding-bottom:calc(12px + env(safe-area-inset-bottom))">
+      <input id="ai-input" type="text" placeholder="اسألني أي شيء..." style="
+        flex:1;background:var(--surface);border:1px solid var(--border);
+        border-radius:24px;padding:10px 16px;color:var(--text);
+        font-family:inherit;font-size:.9rem;outline:none;direction:rtl
+      " onkeydown="if(event.key==='Enter')sendAIMessage()">
+      <button onclick="sendAIMessage()" style="
+        width:42px;height:42px;border-radius:50%;
+        background:linear-gradient(135deg,#3b6ff0,#06c9a0);
+        border:none;color:#fff;font-size:1.1rem;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;
+        flex-shrink:0
+      ">↑</button>
+    </div>
+  </div>
+</div>
+<script>
+// ── AI Chat (Local - No Internet Required) ──────────────────────
+var _aiWired = false;
+var NL = '\n';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+<script>
+// ── AI Chat (Local - No Internet Required) ──────────────────────
+var _aiWired = false;
+var NL = '\n';
+
+function openAIChat() {
+  var m = document.getElementById('ai-modal');
+  if (!m) return;
+  m.style.display = 'flex';
+  if (!_aiWired) {
+    _aiWired = true;
+    m.addEventListener('click', function(e){ if(e.target===m) closeAIChat(); });
+  }
+  setTimeout(function(){ var inp=document.getElementById('ai-input'); if(inp) inp.focus(); }, 100);
+}
+
+function closeAIChat() {
+  var m = document.getElementById('ai-modal');
+  if (m) m.style.display = 'none';
+}
+
+function askAI(q) {
+  var inp = document.getElementById('ai-input');
+  if (inp) inp.value = q;
+  sendAIMessage();
+}
+
+function addAIMsg(text, cls) {
+  var box = document.getElementById('ai-messages');
+  if (!box) return null;
+  var d = document.createElement('div');
+  d.className = 'ai-msg ' + cls;
+  d.textContent = text;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  return d;
+}
+
+function sendAIMessage() {
+  var inp = document.getElementById('ai-input');
+  var msg = inp ? inp.value.trim() : '';
+  if (!msg) return;
+  if (inp) inp.value = '';
+  document.getElementById('ai-quick').style.display = 'none';
+  addAIMsg(msg, 'user');
+  var typing = addAIMsg('...', 'typing');
+  setTimeout(function() {
+    if (typing) typing.remove();
+    var reply = localAI(msg);
+    addAIMsg(reply, 'bot');
+  }, 500);
+}
+
+function localAI(q) {
+  try {
+    var s = App.getState();
+    var r = Calc.run(s);
+    var sal = r.sal; var obl = r.obl; var bud = r.bud;
+    var log = s.smsLog || [];
+    var ym = new Date().toISOString().slice(0,7);
+    var thisMonth = log.filter(function(e){ return e.type==='debit'&&(e.addedAt||'').startsWith(ym); });
+    var totalSpend = thisMonth.reduce(function(a,e){ return a+e.amount; },0);
+    var cats = {};
+    thisMonth.forEach(function(e){ cats[e.categoryLabel]=(cats[e.categoryLabel]||0)+e.amount; });
+    var topCat = Object.entries(cats).sort(function(a,b){return b[1]-a[1];})[0];
+    var ql = q.toLowerCase();
+    var fmt = function(n){ return Math.round(n).toLocaleString(); };
+
+    // راتب المستقبل / سنوات
+    var yearMatch = q.match(/(\d+)\s*سن/);
+    if (yearMatch || /مستقبل|سنوات|بعد|تسقيط|توقع/.test(ql)) {
+      var yrs = yearMatch ? parseInt(yearMatch[1]) : 5;
+      var rate = 0.05;
+      var rateMatch = q.match(/(\d+)\s*[%٪]/);
+      if (rateMatch) rate = parseInt(rateMatch[1]) / 100;
+      var basic = s.salary.basic;
+      var out = 'تسقيط راتبك لـ '+yrs+' سنوات (زيادة '+(rate*100)+'% سنوياً):'+NL+NL;
+      for (var i=1; i<=yrs; i++) {
+        basic = basic * (1+rate);
+        var hous = basic*0.25;
+        var gosi = (basic+hous)*0.0975;
+        var net = (basic+hous-gosi)+(s.salary.transportAllowance||0)+(sal.otherAllowances||0);
+        out += 'سنة '+i+': أساسي '+fmt(basic)+' · صافي '+fmt(net)+' ريال'+NL;
+      }
+      return out;
+    }
+
+    // وين راحت الفلوس
+    if (/وين|راحت|صرفت|مصروف|مصاريف|انفق/.test(ql)) {
+      if (!thisMonth.length) return 'ما عندي سجل مصاريف لهذا الشهر. أضف مصاريفك من قسم المصروفات.';
+      var out2 = 'مصاريفك هذا الشهر ('+fmt(totalSpend)+' ريال):'+NL+NL;
+      Object.entries(cats).sort(function(a,b){return b[1]-a[1];}).forEach(function(x){
+        out2 += x[0]+': '+fmt(x[1])+' ريال ('+Math.round(x[1]/totalSpend*100)+'%)'+NL;
+      });
+      return out2;
+    }
+
+    // ادخار / توفير
+    if (/وفر|ادخر|توفير|ادخار|اوفر/.test(ql)) {
+      var sv = Math.max(0, bud.surplus);
+      return 'امكانيات الادخار:'+NL+NL+
+        '• فائضك الشهري: '+fmt(sv)+' ريال'+NL+
+        '• بعد 6 أشهر: '+fmt(sv*6)+' ريال'+NL+
+        '• بعد سنة: '+fmt(sv*12)+' ريال'+NL+NL+
+        (sv<500?'التزاماتك أو مصاريفك عالية. راجع التوزيع.':sv>3000?'ممتاز! فكر في رفع نسبة الاستثمار.':'وضع جيد، حافظ عليه.');
+    }
+
+    // الالتزامات
+    if (/التزام|قسط|قرض|فاتور|ايجار|إيجار/.test(ql)) {
+      var pct = Math.round(obl.totalObl/sal.net*100);
+      return 'التزاماتك الشهرية:'+NL+NL+
+        '• الإجمالي: '+fmt(obl.totalObl)+' ريال'+NL+
+        '• النسبة من راتبك: '+pct+'%'+NL+
+        '• مصاريف ثابتة: '+fmt(obl.totalExpenses)+' ريال'+NL+
+        '• أقساط قروض: '+fmt(obl.totalLoans)+' ريال'+NL+
+        '• تأمين: '+fmt(obl.totalIns)+' ريال'+NL+NL+
+        (pct>55?'تتجاوز 55% — حاول تقليلها.':'نسبة مقبولة.');
+    }
+
+    // الراتب
+    if (/راتب|صافي|دخل/.test(ql)) {
+      return 'تفاصيل راتبك:'+NL+NL+
+        '• الأساسي: '+fmt(s.salary.basic)+' ريال'+NL+
+        '• بدل السكن: '+fmt(sal.housing)+' ريال'+NL+
+        '• بدل النقل: '+fmt(s.salary.transportAllowance||0)+' ريال'+NL+
+        '• خصم التأمينات: '+fmt(sal.gosi)+' ريال'+NL+
+        '• الصافي: '+fmt(sal.net)+' ريال';
+    }
+
+    // الأوفر تايم
+    if (/اوفر|أوفر|overtime|اضافي|إضافي/.test(ql)) {
+      var ot = Calc.overtime(sal.overtimeBase, s.salary.basic, s.overtime.days, s.overtime.hours||0);
+      return 'الأوفر تايم:'+NL+NL+
+        '• سعر الساعة: '+fmt(ot.additionalHourly)+' ريال'+NL+
+        '• قيمة اليوم: '+fmt(ot.dayValue)+' ريال'+NL+
+        '• الأيام: '+s.overtime.days+NL+
+        '• الإجمالي: '+fmt(ot.monthly)+' ريال';
+    }
+
+    // ملخص / وضع
+    if (/وضع|ملخص|كيف|حال|نصيحة/.test(ql)) {
+      var pct2 = Math.round(obl.totalObl/sal.net*100);
+      var status = bud.surplus>2000?'ممتاز':bud.surplus>500?'مقبول':'يحتاج مراجعة';
+      return 'ملخص وضعك المالي:'+NL+NL+
+        '• صافي الراتب: '+fmt(sal.net)+' ريال'+NL+
+        '• الالتزامات: '+fmt(obl.totalObl)+' ريال ('+pct2+'%)'+NL+
+        '• الفائض: '+fmt(bud.surplus)+' ريال'+NL+
+        (thisMonth.length?'• المصروف هذا الشهر: '+fmt(totalSpend)+' ريال'+NL:'')+
+        NL+'التقييم: '+status;
+    }
+
+    // أكثر شيء صرفت
+    if (/اكثر|أكثر|كثير/.test(ql)) {
+      if (!topCat) return 'ما عندي بيانات مصاريف بعد.';
+      return 'أكثر شيء صرفته:'+NL+NL+
+        topCat[0]+': '+fmt(topCat[1])+' ريال'+NL+
+        '('+Math.round(topCat[1]/totalSpend*100)+'% من مصاريفك)';
+    }
+
+    return 'جرب تسألني عن:'+NL+
+      '• "وين راحت فلوسي؟"'+NL+
+      '• "كم أقدر أوفر؟"'+NL+
+      '• "ملخص وضعي المالي"'+NL+
+      '• "راتبي بعد 5 سنوات بزيادة 8%"'+NL+
+      '• "الالتزامات"'+NL+
+      '• "الأوفر تايم"';
+
+  } catch(e) {
+    return 'تأكد إنك أدخلت راتبك في صفحة الراتب أولاً.';
+  }
+}
+
+
+</script>
+
+<!-- Invoice Preview Modal -->
+<div id="invoice-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border-radius:20px;width:100%;max-width:420px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;color:var(--text)">📷 تحليل الفاتورة</span>
+      <button onclick="closeInvoiceModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div style="padding:16px">
+      <img id="invoice-preview" style="width:100%;border-radius:12px;max-height:200px;object-fit:cover;margin-bottom:14px">
+      <div id="invoice-status" style="text-align:center;color:var(--muted);font-size:.88rem;padding:10px 0">جاري التحليل...</div>
+      <div id="invoice-result" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div>
+            <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">المبلغ</div>
+            <input id="inv-amount" type="number" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-family:inherit;font-size:.95rem">
+          </div>
+          <div>
+            <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">التصنيف</div>
+            <select id="inv-category" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-family:inherit;font-size:.88rem">
+              <option value="food">🍔 مطاعم</option>
+              <option value="grocery">🛒 بقالة</option>
+              <option value="transport">🚗 مواصلات</option>
+              <option value="shopping">🛍 تسوق</option>
+              <option value="bills">🧾 فواتير</option>
+              <option value="health">💊 صحة</option>
+              <option value="transfer">🔄 تحويلات</option>
+              <option value="other">📦 أخرى</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">اسم المحل</div>
+          <input id="inv-merchant" type="text" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-family:inherit;font-size:.88rem;direction:rtl" placeholder="اختياري">
+        </div>
+        <button onclick="confirmInvoice()" style="width:100%;background:linear-gradient(135deg,#3b6ff0,#06c9a0);border:none;color:#fff;border-radius:12px;padding:12px;font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer">✅ إضافة للسجل</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// ── Invoice Scanner (Claude Vision API) ─────────────────────────
+var _invoiceData = null;
+
+var _catColors = {
+  food:'#f97316', grocery:'#06c9a0', transport:'#3b6ff0',
+  shopping:'#a78bfa', bills:'#fbbf24', health:'#f472b6',
+  transfer:'#06b6d4', cash:'#94a3b8', other:'#7b87aa'
+};
+var _catLabels = {
+  food:'🍔 مطاعم وكافيهات', grocery:'🛒 بقالة وسوبرماركت',
+  transport:'🚗 مواصلات ووقود', shopping:'🛍 تسوق',
+  bills:'🧾 فواتير وخدمات', health:'💊 صحة وصيدلية',
+  transfer:'🔄 تحويلات', cash:'💵 سحب نقدي', other:'📦 أخرى'
+};
+
+function openInvoiceModal() {
+  var m = document.getElementById('invoice-modal');
+  if (m) m.style.display = 'flex';
+}
+
+function closeInvoiceModal() {
+  var m = document.getElementById('invoice-modal');
+  if (m) m.style.display = 'none';
+  var inp = document.getElementById('invoice-input');
+  if (inp) inp.value = '';
+  _invoiceData = null;
+}
+
+async function scanInvoice(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+
+  // Show modal with preview
+  openInvoiceModal();
+  document.getElementById('invoice-result').style.display = 'none';
+  document.getElementById('invoice-status').style.display = 'block';
+  document.getElementById('invoice-status').textContent = '🔍 جاري قراءة الفاتورة...';
+
+  var preview = document.getElementById('invoice-preview');
+  var reader = new FileReader();
+
+  reader.onload = async function(e) {
+    var dataUrl = e.target.result;
+    preview.src = dataUrl;
+
+    // Convert to base64
+    var base64 = dataUrl.split(',')[1];
+    var mediaType = file.type || 'image/jpeg';
+
+    try {
+      var res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 300,
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: { type: 'base64', media_type: mediaType, data: base64 }
+              },
+              {
+                type: 'text',
+                text: 'هذه فاتورة. استخرج منها: المبلغ الإجمالي، اسم المحل، نوع المصروف. أجب بـ JSON فقط بدون أي نص آخر:\n{"amount": 0, "merchant": "اسم المحل", "category": "food|grocery|transport|shopping|bills|health|other"}'
+              }
+            ]
+          }]
+        })
+      });
+
+      var data = await res.json();
+
+      if (data.error) {
+        throw new Error(data.error.message || 'API error');
+      }
+
+      var raw = data.content && data.content[0] ? data.content[0].text.trim() : null;
+      if (!raw) throw new Error('no response');
+
+      var json = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+      // Fill form
+      document.getElementById('inv-amount').value = json.amount || '';
+      document.getElementById('inv-category').value = json.category || 'other';
+      document.getElementById('inv-merchant').value = json.merchant || '';
+
+      _invoiceData = json;
+
+      document.getElementById('invoice-status').style.display = 'none';
+      document.getElementById('invoice-result').style.display = 'block';
+
+    } catch(err) {
+      var statusEl = document.getElementById('invoice-status');
+      if (err.message && err.message.includes('fetch')) {
+        statusEl.textContent = '⚠️ تحتاج إنترنت لقراءة الفاتورة. ارفع الموقع على Netlify أولاً.';
+      } else {
+        statusEl.textContent = '❌ ما قدر يقرأ الفاتورة. حاول بصورة أوضح.';
+      }
+      statusEl.style.color = 'var(--red)';
+    }
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function confirmInvoice() {
+  var amount = parseFloat(document.getElementById('inv-amount').value);
+  var category = document.getElementById('inv-category').value;
+  var merchant = document.getElementById('inv-merchant').value.trim() || null;
+
+  if (!amount || amount <= 0) {
+    alert('أدخل مبلغاً صحيحاً');
+    return;
+  }
+
+  var entry = {
+    id: Date.now(),
+    amount: amount,
+    type: 'debit',
+    category: category,
+    categoryLabel: _catLabels[category] || '📦 أخرى',
+    categoryColor: _catColors[category] || '#7b87aa',
+    merchant: merchant,
+    dateStr: null,
+    addedAt: new Date().toISOString(),
+    raw: 'فاتورة مصورة'
+  };
+
+  App.addSMSEntry(entry);
+  closeInvoiceModal();
+
+  // Show success toast
+  var toast = document.getElementById('toast');
+  if (toast) {
+    toast.textContent = '✅ تمت الإضافة من الفاتورة';
+    toast.classList.add('show');
+    setTimeout(function(){ toast.classList.remove('show'); }, 2500);
+  }
+}
+
+// Close on backdrop
+document.addEventListener('DOMContentLoaded', function() {
+  var m = document.getElementById('invoice-modal');
+  if (m) m.addEventListener('click', function(e){ if(e.target===m) closeInvoiceModal(); });
+});
+
+</script>
+</body>
+</html>
