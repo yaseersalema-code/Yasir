@@ -3258,7 +3258,7 @@ async function sendInvoiceToAPI(base64, mediaType) {
               },
               {
                 type: 'text',
-                text: 'هذه فاتورة. استخرج منها: المبلغ الإجمالي، اسم المحل، نوع المصروف. أجب بـ JSON فقط بدون أي نص آخر:\n{"amount": 0, "merchant": "اسم المحل", "category": "food|grocery|transport|shopping|bills|health|other"}'
+                text: 'هذه فاتورة. استخرج منها: المبلغ الإجمالي (احتفظ بالهللات كما هي، مثل 79.62 لا تقربها)، اسم المحل، نوع المصروف. أجب بـ JSON فقط بدون أي نص آخر:\n{"amount": 0.00, "merchant": "اسم المحل", "category": "food|grocery|transport|shopping|bills|health|other"}'
               }
             ]
           }]

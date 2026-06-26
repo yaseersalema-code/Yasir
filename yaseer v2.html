@@ -637,6 +637,7 @@ input[type=range]::-webkit-slider-thumb {
       <span>يسير</span>
     </div>
     <div class="topbar-actions">
+      <button class="icon-btn" id="lang-btn" onclick="toggleLangBtn()" style="font-size:.78rem;font-weight:700;color:var(--text)" title="English">EN</button>
       <button class="icon-btn" onclick="openAPIKeyModal()" title="مفتاح API" style="font-size:.85rem;font-weight:700;color:var(--blue)">🔑</button>
       <button class="icon-btn" id="btn-save" title="حفظ">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -664,7 +665,7 @@ input[type=range]::-webkit-slider-thumb {
 
   <!-- المتبقي الثابت — يظهر بكل الصفحات -->
   <div class="global-remaining-bar" id="global-remaining-bar">
-    <span class="grb-label">صافي الراتب الشهري</span>
+    <span class="grb-label" data-lang-key="grb-label-txt">صافي الراتب الشهري</span>
     <span class="grb-value pos" id="grb-value">— ريال</span>
   </div>
 
@@ -676,7 +677,7 @@ input[type=range]::-webkit-slider-thumb {
       <div class="page-inner">
 
         <div class="page-hero">
-          <div class="hero-label">صافي الراتب الشهري</div>
+          <div class="hero-label" data-lang-key="hero-salary">صافي الراتب الشهري</div>
           <div class="hero-value" id="h-net">0 ريال</div>
         </div>
 
@@ -698,13 +699,13 @@ input[type=range]::-webkit-slider-thumb {
         </a>
 
         <div class="card">
-          <div class="card-title">مكونات الراتب</div>
+          <div class="card-title" data-lang-key="salary-components">مكونات الراتب</div>
           <div class="field-group">
-            <label>الراتب الأساسي</label>
+            <label data-lang-key="basic-label">الراتب الأساسي</label>
             <div class="field-row"><input type="number" id="f-basic" style="flex:1" value="10400" min="0" step="100"><span class="unit">ريال</span></div>
           </div>
           <div class="field-group">
-            <label>بدل السكن <span class="auto-tag">25% تلقائي</span></label>
+            <label data-lang-key="housing-label">بدل السكن <span class="auto-tag">25% تلقائي</span></label>
             <div class="field-row auto-field"><span id="f-housing-display">—</span><span class="unit">ريال</span></div>
           </div>
           <div class="field-group">
@@ -714,9 +715,9 @@ input[type=range]::-webkit-slider-thumb {
           <div class="field-group">
             <label style="margin-bottom:8px">بدلات أخرى</label>
             <div id="allowances-list"></div>
-            <button class="btn-add" style="margin-top:0" onclick="App.addAllowance()">+ إضافة بدل</button>
+            <button class="btn-add" style="margin-top:0" onclick="App.addAllowance()"><span data-lang-key="add-allowance">+ إضافة بدل</span></button>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted)">
-              <span>إجمالي البدلات الأخرى</span>
+              <span><span data-lang-key="other-total">إجمالي البدلات الأخرى</span></span>
               <span id="allowances-total" style="font-weight:700;color:var(--green)">0 ريال</span>
             </div>
           </div>
@@ -766,7 +767,7 @@ input[type=range]::-webkit-slider-thumb {
 
         <!-- بطاقات التوزيع -->
         <div class="card">
-          <div class="card-title">وزّع فائضك بالريال</div>
+          <div class="card-title" data-lang-key="dist-title">وزّع فائضك بالريال</div>
           <div class="card-sub-title">حدد كم تريد لكل صنف — الباقي يظهر تلقائياً</div>
 
           <div class="jar-card">
@@ -818,7 +819,7 @@ input[type=range]::-webkit-slider-thumb {
           </div>
 
           <div class="list-total">
-            <span>🟡 الفائض المتبقي</span>
+            <span data-lang-key="surplus-label">🟡 الفائض المتبقي</span>
             <span class="total-val" id="jar-surplus-amt" style="color:#fbbf24">—</span>
           </div>
           <div id="jar-over-warn" class="pct-warn" style="display:none">⚠ المبالغ المخصصة تتجاوز الفائض المتاح</div>
@@ -885,7 +886,7 @@ input[type=range]::-webkit-slider-thumb {
           <div class="card-title" style="color:var(--blue)">📋 الالتزامات الشهرية</div>
           <div class="card-sub-title">إيجار · فواتير · اشتراكات</div>
           <div id="expenses-list"></div>
-          <button class="btn-add" onclick="addRow('expenses')">+ إضافة التزام</button>
+          <button class="btn-add" onclick="addRow('expenses')" data-lang-key="add-exp">+ إضافة التزام</button>
           <div class="list-total"><span>الإجمالي</span><span class="total-val blue" id="t-expenses">—</span></div>
         </div>
 
@@ -894,7 +895,7 @@ input[type=range]::-webkit-slider-thumb {
           <div class="card-title" style="color:var(--orange)">🏦 القروض الشهرية</div>
           <div class="card-sub-title">أقساط · تمويل · بطاقات</div>
           <div id="loans-list"></div>
-          <button class="btn-add" onclick="addRow('loans')">+ إضافة قرض</button>
+          <button class="btn-add" onclick="addRow('loans')" data-lang-key="add-loan">+ إضافة قرض</button>
           <div class="list-total"><span>الإجمالي</span><span class="total-val orange" id="t-loans">—</span></div>
         </div>
 
@@ -914,7 +915,7 @@ input[type=range]::-webkit-slider-thumb {
         <div class="card">
           <div class="card-title" style="color:var(--purple)">🏋️ اشتراك النادي الرياضي</div>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="gym" value="no" checked><span>لا</span></label>
+            <label class="radio-opt"><input type="radio" name="gym" value="no" checked><span data-lang-key="gym-no">لا</span></label>
             <label class="radio-opt"><input type="radio" name="gym" value="yes"><span>نعم</span></label>
           </div>
           <div id="gym-block" style="display:none">
@@ -931,9 +932,9 @@ input[type=range]::-webkit-slider-thumb {
 
         <!-- العمل المسائي -->
         <div class="card">
-          <div class="card-title" style="color:var(--green)">🌙 العمل المسائي</div>
+          <div class="card-title" style="color:var(--green)" data-lang-key="evening-title">🌙 العمل المسائي</div>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="evening" value="no" checked><span>لا</span></label>
+            <label class="radio-opt"><input type="radio" name="evening" value="no" checked><span data-lang-key="evening-no">لا</span></label>
             <label class="radio-opt"><input type="radio" name="evening" value="yes"><span>نعم</span></label>
           </div>
           <div id="evening-block" style="display:none">
@@ -947,7 +948,7 @@ input[type=range]::-webkit-slider-thumb {
 
         <!-- الأوفر تايم -->
         <div class="card">
-          <div class="card-title" style="color:var(--orange)">⏱ الأوفر تايم</div>
+          <div class="card-title" style="color:var(--orange)" data-lang-key="ot-title">⏱ الأوفر تايم</div>
           <div class="card-sub-title">9 ساعات لليوم الواحد</div>
           <div class="field-group"><label>عدد أيام الأوفر تايم في الشهر</label>
             <div class="ot-days-row" id="ot-days-row"></div>
@@ -1094,12 +1095,12 @@ input[type=range]::-webkit-slider-thumb {
         <div class="card">
           <div class="card-title">📥 لصق رسالة البنك</div>
           <div class="card-sub-title">انسخ رسالة SMS من بنكك والصقها هنا — يدعم أغلب البنوك السعودية</div>
-          <textarea id="sms-input" placeholder="مثال: تم خصم 150.00 ريال من حسابك في 18/06 لدى STC PAY..." rows="4" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:.88rem;padding:12px;outline:none;resize:vertical;direction:rtl"></textarea>
+          <textarea id="sms-input" id="sms-placeholder" placeholder="مثال: تم خصم 150.00 ريال من حسابك في 18/06 لدى STC PAY..." rows="4" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:.88rem;padding:12px;outline:none;resize:vertical;direction:rtl"></textarea>
           <div style="display:flex;gap:8px;margin-top:10px">
             <button class="btn-primary" style="flex:1" onclick="App.parseSMS()">تحليل 🔍</button>
             <label class="btn-secondary" style="flex:1;text-align:center;cursor:pointer">
               📷 رفع فاتورة
-              <input type="file" id="invoice-input" accept="image/*" capture="environment" style="display:none" onchange="scanInvoice(this)">
+              <input type="file" id="invoice-input" accept="image/*" style="display:none" onchange="scanInvoice(this)">
             </label>
           </div>
           <button onclick="openAPIKeyModal()" style="width:100%;margin-top:8px;background:rgba(59,111,240,.08);border:1px solid rgba(59,111,240,.3);color:var(--blue);border-radius:10px;padding:8px;font-family:inherit;font-size:.8rem;cursor:pointer">
@@ -1117,7 +1118,7 @@ input[type=range]::-webkit-slider-thumb {
 
         <!-- التصنيفات -->
         <div class="card">
-          <div class="card-title">📊 المصروفات حسب التصنيف</div>
+          <div class="card-title" data-lang-key="sms-cats">📊 المصروفات حسب التصنيف</div>
           <div id="sms-categories-list"><div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px 0">لا توجد عمليات بعد</div></div>
         </div>
 
@@ -1138,7 +1139,7 @@ input[type=range]::-webkit-slider-thumb {
       <div class="page-inner">
 
         <div class="card">
-          <div class="card-title">📆 التقارير الشهرية</div>
+          <div class="card-title" data-lang-key="reports-title">📆 التقارير الشهرية</div>
           <div class="card-sub-title">ملخص كل شهر من سجل المصروفات — اضغط السهم للتفاصيل</div>
           <div id="reports-list"><div style="text-align:center;color:var(--muted);font-size:.85rem;padding:30px 0">لا توجد بيانات بعد · أضف مصروفات من قسم المصروفات</div></div>
         </div>
@@ -1151,7 +1152,7 @@ input[type=range]::-webkit-slider-thumb {
     <div class="page-inner">
 
       <div class="card">
-        <div class="card-title" style="color:#3b6ff0">📈 راتبي المستقبلي التقديري</div>
+        <div class="card-title" style="color:#3b6ff0" data-lang-key="proj-title">📈 راتبي المستقبلي التقديري</div>
         <div class="card-sub-title">يسحب البدلات من صفحة الراتب تلقائياً — أدخل نسبة الزيادة والمدة</div>
 
         <div class="info-grid">
@@ -1725,9 +1726,9 @@ const UI = (() => {
   const fmt  = n => _addCommas(n);
   const fmtD = n => Math.abs(Number(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const fmtInt = n => _addCommas(n);
-  const money = n => fmt(n) + ' ريال';
-  const moneyD = n => fmtD(n) + ' ريال';
-  const moneyInt = n => fmtInt(n) + ' ريال';
+  const money = n => fmt(n) + ' ' + (typeof _isEn !== 'undefined' && _isEn ? 'SAR' : 'ريال');
+  const moneyD = n => fmtD(n) + ' ' + (typeof _isEn !== 'undefined' && _isEn ? 'SAR' : 'ريال');
+  const moneyInt = n => fmtInt(n) + ' ' + (typeof _isEn !== 'undefined' && _isEn ? 'SAR' : 'ريال');
   const $ = id => document.getElementById(id);
 
   // ── Render salary tab ───────────────────────────────────
@@ -1755,7 +1756,7 @@ const UI = (() => {
       const amt = bud[key] || 0;
       const pct = bud.remainder > 0 ? Math.min(100, amt / bud.remainder * 100) : 0;
       if($('jar-' + key + '-amt')) $('jar-' + key + '-amt').textContent = money(amt);
-      if($('jar-' + key + '-pct')) $('jar-' + key + '-pct').textContent = pct.toFixed(1) + '% من الفائض المتاح';
+      if($('jar-' + key + '-pct')) $('jar-' + key + '-pct').textContent = pct.toFixed(1) + t('% من الفائض المتاح');
       if($('jar-' + key + '-bar')) $('jar-' + key + '-bar').style.width = pct + '%';
     };
     syncJar('emerg');
@@ -1869,7 +1870,7 @@ const UI = (() => {
       for (let d = 0; d <= 5; d++) {
         const btn = document.createElement('button');
         btn.className = 'ot-btn' + (d === state.overtime.days ? ' active' : '');
-        btn.textContent = d === 0 ? 'لا يوجد' : d + (d === 1 ? ' يوم' : ' أيام');
+        btn.textContent = d === 0 ? t('لا يوجد') : d + t(d === 1 ? ' يوم' : ' أيام');
         btn.onclick = () => App.setOTDays(d);
         otRow.appendChild(btn);
       }
@@ -1930,7 +1931,7 @@ const UI = (() => {
         for (let w = 0; w <= 5; w++) {
           const btn = document.createElement('button');
           btn.className = 'ot-btn' + (w === (ocState.weeks ?? 4) ? ' active' : '');
-          btn.textContent = w + (w === 1 ? ' أسبوع' : ' أسابيع');
+          btn.textContent = w + t(w === 1 ? ' أسبوع' : ' أسابيع');
           btn.onclick = () => App.setOnCallWeeks(w);
           weeksRow.appendChild(btn);
         }
@@ -1977,7 +1978,7 @@ const UI = (() => {
     }
     const rhSub = $('rh-sub');
     if(rhSub) rhSub.textContent = remaining >= 0
-      ? `متاح · ${(remaining / sal.net * 100).toFixed(1)}% من صافي الراتب`
+      ? t('متاح') + ' · ' + (remaining / sal.net * 100).toFixed(1) + '% ' + t('من صافي الراتب')
       : `⚠ عجز بمقدار ${money(Math.abs(remaining))}`;
 
     // صافي الراتب في صفحة الراتب فقط
@@ -2030,7 +2031,7 @@ const UI = (() => {
     const debits = log.filter(e => e.type === 'debit');
     const totalSpent = debits.reduce((s,e) => s + e.amount, 0);
     totalEl.textContent = money(totalSpent);
-    subEl.textContent   = `${log.length} عملية مسجّلة`;
+    subEl.textContent   = `${log.length} ${t('عملية مسجّلة')}`;
 
     // ── Categories breakdown ──
     const catMap = {};
@@ -2079,6 +2080,10 @@ const UI = (() => {
 
   // ── Master render ────────────────────────────────────────
   function render(res, state) {
+    // Schedule re-translation after render for dynamic content
+    if (typeof _isEn !== 'undefined' && _isEn) {
+      setTimeout(function(){ if(typeof applyTranslation==='function') applyTranslation(true); }, 50);
+    }
     renderSalary(res, state);
     renderBudget(res, state);
     renderObligations(res);
@@ -2159,6 +2164,10 @@ const UI = (() => {
 
   // ── Master render ────────────────────────────────────────
   function render(res, state) {
+    // Schedule re-translation after render for dynamic content
+    if (typeof _isEn !== 'undefined' && _isEn) {
+      setTimeout(function(){ if(typeof applyTranslation==='function') applyTranslation(true); }, 50);
+    }
     renderSalary(res, state);
     renderBudget(res, state);
     renderObligations(res);
@@ -2380,12 +2389,12 @@ const App = (() => {
     if (!wrap || !table) return;
     wrap.style.display = 'block';
 
-    let rows = `<div class="proj-row header">
-      <div class="proj-cell">السنة</div>
-      <div class="proj-cell">الأساسي</div>
-      <div class="proj-cell">الزيادة</div>
-      <div class="proj-cell">الصافي (بعد التأمينات)</div>
-    </div>`;
+    let rows = '<div class="proj-row header">'+
+      '<div class="proj-cell">'+t('السنة')+'</div>'+
+      '<div class="proj-cell">'+t('الأساسي')+'</div>'+
+      '<div class="proj-cell">'+t('الزيادة')+'</div>'+
+      '<div class="proj-cell">'+t('الصافي (بعد التأمينات)')+'</div>'+
+      '</div>';
 
     let basic = sal.totalBasic;
     for (let y = 1; y <= years; y++) {
@@ -2394,14 +2403,13 @@ const App = (() => {
       const newHousing = newBasic * 0.25;
       const newGosi = (newBasic + newHousing) * 0.0975;
       const newNet = (newBasic + newHousing - newGosi) + transport + otherAllowances;
-      const isCurrent = y === 0;
 
-      rows += `<div class="proj-row${y === 1 ? ' current' : ''}">
-        <div class="proj-cell muted">سنة ${y}</div>
-        <div class="proj-cell blue">${UI.money(newBasic)}</div>
-        <div class="proj-cell green">+ ${UI.money(increase)}</div>
-        <div class="proj-cell blue">${UI.money(newNet)}</div>
-      </div>`;
+      rows += '<div class="proj-row'+(y===1?' current':'')+'">'+
+        '<div class="proj-cell muted">'+t('سنة')+' '+y+'</div>'+
+        '<div class="proj-cell blue">'+UI.money(newBasic)+'</div>'+
+        '<div class="proj-cell green">+ '+UI.money(increase)+'</div>'+
+        '<div class="proj-cell blue">'+UI.money(newNet)+'</div>'+
+        '</div>';
 
       basic = newBasic;
     }
@@ -2482,7 +2490,7 @@ const App = (() => {
     const ok = DB.save(state);
     const toast = document.getElementById('toast');
     if (toast) {
-      toast.textContent = ok ? 'تم الحفظ ✅' : 'تعذّر الحفظ ⚠';
+      toast.textContent = ok ? t('تم الحفظ ✅') : t('تعذّر الحفظ ⚠');
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
@@ -2644,7 +2652,7 @@ const App = (() => {
     run();
 
     const toast = document.getElementById('toast');
-    toast.textContent = 'تم المسح ✅';
+    toast.textContent = t('تم المسح ✅');
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2000);
   }
@@ -2707,7 +2715,7 @@ const App = (() => {
     run();
     const toast = document.getElementById('toast');
     if (toast) {
-      toast.textContent = 'تم مسح السجل ✅';
+      toast.textContent = t('تم مسح السجل ✅');
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
@@ -2781,7 +2789,7 @@ function openAPIKeyModal() {
   var saved = localStorage.getItem('yaseer_api_key');
   if (inp) inp.value = saved || '';
   var status = document.getElementById('apikey-status');
-  if (status) status.textContent = saved ? '✅ مفتاح محفوظ' : '';
+  if (status) status.textContent = saved ? t('✅ مفتاح محفوظ') : '';
   if (status) status.style.color = 'var(--green)';
 }
 
@@ -2795,12 +2803,12 @@ function saveAPIKey() {
   var key = inp ? inp.value.trim() : '';
   if (!key || !key.startsWith('sk-ant-')) {
     var s = document.getElementById('apikey-status');
-    if (s) { s.textContent = '❌ مفتاح غير صحيح — يبدأ بـ sk-ant-'; s.style.color = 'var(--red)'; }
+    if (s) { s.textContent = t('❌ مفتاح غير صحيح — يبدأ بـ sk-ant-'); s.style.color = 'var(--red)'; }
     return;
   }
   localStorage.setItem('yaseer_api_key', key);
   var s = document.getElementById('apikey-status');
-  if (s) { s.textContent = '✅ تم الحفظ!'; s.style.color = 'var(--green)'; }
+  if (s) { s.textContent = t('✅ تم الحفظ!'); s.style.color = 'var(--green)'; }
   setTimeout(closeAPIKeyModal, 1000);
 }
 
@@ -3107,7 +3115,20 @@ function localAI(q) {
       <button onclick="closeInvoiceModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer">✕</button>
     </div>
     <div style="padding:16px">
-      <img id="invoice-preview" style="width:100%;border-radius:12px;max-height:200px;object-fit:cover;margin-bottom:14px">
+      <!-- Document scanner frame -->
+      <div style="position:relative;margin-bottom:14px;border-radius:12px;overflow:hidden;background:#000;min-height:200px">
+        <img id="invoice-preview" style="width:100%;border-radius:12px;max-height:250px;object-fit:contain;display:block">
+        <!-- Scanner corner guides -->
+        <div id="scanner-overlay" style="display:none;position:absolute;inset:0;pointer-events:none">
+          <div style="position:absolute;top:10%;left:10%;width:80%;height:80%;border:2px solid #fbbf24;border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,.4)">
+            <!-- Corners -->
+            <div style="position:absolute;top:-2px;left:-2px;width:20px;height:20px;border-top:4px solid #fbbf24;border-left:4px solid #fbbf24;border-radius:2px 0 0 0"></div>
+            <div style="position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-top:4px solid #fbbf24;border-right:4px solid #fbbf24;border-radius:0 2px 0 0"></div>
+            <div style="position:absolute;bottom:-2px;left:-2px;width:20px;height:20px;border-bottom:4px solid #fbbf24;border-left:4px solid #fbbf24;border-radius:0 0 0 2px"></div>
+            <div style="position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-bottom:4px solid #fbbf24;border-right:4px solid #fbbf24;border-radius:0 0 2px 0"></div>
+          </div>
+        </div>
+      </div>
       <div id="invoice-status" style="text-align:center;color:var(--muted);font-size:.88rem;padding:10px 0">جاري التحليل...</div>
       <div id="invoice-result" style="display:none">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
@@ -3175,12 +3196,12 @@ async function scanInvoice(input) {
   openInvoiceModal();
   document.getElementById('invoice-result').style.display = 'none';
   document.getElementById('invoice-status').style.display = 'block';
-  document.getElementById('invoice-status').textContent = '🔍 جاري قراءة الفاتورة...';
+  document.getElementById('invoice-status').textContent = t('🔍 جاري قراءة الفاتورة...');
 
   // Check API key
   var apiKey = localStorage.getItem('yaseer_api_key');
   if (!apiKey) {
-    document.getElementById('invoice-status').textContent = '⚠️ أضف مفتاح API أولاً — اضغط 🔑 في الأعلى';
+    document.getElementById('invoice-status').textContent = t('⚠️ أضف مفتاح API أولاً — اضغط 🔑 في الأعلى');
     document.getElementById('invoice-status').style.color = 'var(--orange)';
     return;
   }
@@ -3191,19 +3212,39 @@ async function scanInvoice(input) {
   reader.onload = async function(e) {
     var dataUrl = e.target.result;
     preview.src = dataUrl;
+    var overlay = document.getElementById('scanner-overlay');
+    if (overlay) overlay.style.display = 'block';
 
-    // Convert to base64
-    var base64 = dataUrl.split(',')[1];
-    var mediaType = file.type || 'image/jpeg';
+    // Compress image before sending
+    var canvas = document.createElement('canvas');
+    var img = new Image();
+    img.onload = async function() {
+      var maxW = 1200, maxH = 1600;
+      var w = img.width, h = img.height;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+      if (h > maxH) { w = w * maxH / h; h = maxH; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var compressed = canvas.toDataURL('image/jpeg', 0.7);
+      var base64 = compressed.split(',')[1];
+      var mediaType = 'image/jpeg';
+      await sendInvoiceToAPI(base64, mediaType);
+    };
+    img.src = dataUrl;
+  };
 
+  reader.readAsDataURL(file);
+}
+
+async function sendInvoiceToAPI(base64, mediaType) {
+    var statusEl = document.getElementById('invoice-status');
     try {
-      var res = await fetch('https://api.anthropic.com/v1/messages', {
+      var apiKey = localStorage.getItem('yaseer_api_key') || '';
+      var res = await fetch('/.netlify/functions/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': localStorage.getItem('yaseer_api_key') || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-request-header': 'true'
+          'x-api-key': apiKey
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
@@ -3217,7 +3258,7 @@ async function scanInvoice(input) {
               },
               {
                 type: 'text',
-                text: 'هذه فاتورة. استخرج منها: المبلغ الإجمالي، اسم المحل، نوع المصروف. أجب بـ JSON فقط بدون أي نص آخر:\n{"amount": 0, "merchant": "اسم المحل", "category": "food|grocery|transport|shopping|bills|health|other"}'
+                text: 'هذه فاتورة. استخرج منها: المبلغ الإجمالي (احتفظ بالهللات كما هي، مثل 79.62 لا تقربها)، اسم المحل، نوع المصروف. أجب بـ JSON فقط بدون أي نص آخر:\n{"amount": 0.00, "merchant": "اسم المحل", "category": "food|grocery|transport|shopping|bills|health|other"}'
               }
             ]
           }]
@@ -3235,7 +3276,6 @@ async function scanInvoice(input) {
 
       var json = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-      // Fill form
       document.getElementById('inv-amount').value = json.amount || '';
       document.getElementById('inv-category').value = json.category || 'other';
       document.getElementById('inv-merchant').value = json.merchant || '';
@@ -3247,16 +3287,10 @@ async function scanInvoice(input) {
 
     } catch(err) {
       var statusEl = document.getElementById('invoice-status');
-      if (err.message && err.message.includes('fetch')) {
-        statusEl.textContent = '⚠️ تحتاج إنترنت لقراءة الفاتورة. ارفع الموقع على Netlify أولاً.';
-      } else {
-        statusEl.textContent = '❌ ما قدر يقرأ الفاتورة. حاول بصورة أوضح.';
-      }
+      statusEl.textContent = '❌ خطأ: ' + (err.message || 'غير معروف');
       statusEl.style.color = 'var(--red)';
+      console.error('Invoice scan error:', err);
     }
-  };
-
-  reader.readAsDataURL(file);
 }
 
 function confirmInvoice() {
@@ -3288,7 +3322,7 @@ function confirmInvoice() {
   // Show success toast
   var toast = document.getElementById('toast');
   if (toast) {
-    toast.textContent = '✅ تمت الإضافة من الفاتورة';
+    toast.textContent = t('✅ تمت الإضافة من الفاتورة');
     toast.classList.add('show');
     setTimeout(function(){ toast.classList.remove('show'); }, 2500);
   }
@@ -3314,6 +3348,273 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div id="apikey-status" style="font-size:.75rem;margin-top:10px;text-align:center"></div>
   </div>
-</div>
+</div><script>
+// ── Complete Bilingual System ─────────────────────────────────────
+var _isEn = (localStorage.getItem('yaseer_lang') === 'en');
+
+var _AR_TO_EN = {
+  // Tabs
+  '💰 الراتب': '💰 Salary',
+  '📊 التوزيع': '📊 Budget',
+  '💳 الالتزامات': '💳 Obligations',
+  '⚡ الإضافي': '⚡ Extras',
+  '📋 الملخص': '📋 Summary',
+  '📥 المصروفات': '📥 Expenses',
+  '📆 التقارير': '📆 Reports',
+  '📈 راتبي التقديري': '📈 Projection',
+  // Global bar
+  'صافي الراتب الشهري': 'Monthly Net Salary',
+  // Salary
+  'تحقق من راتبك الرسمي': 'Verify Official Salary',
+  'فتح نظام GSA الرسمي لكشف الراتب': 'Open GSA system for salary slip',
+  'مكونات الراتب': 'Salary Components',
+  'الراتب الأساسي': 'Basic Salary',
+  'بدل السكن': 'Housing Allowance',
+  '25% تلقائي': '25% auto',
+  'بدل النقل': 'Transport Allowance',
+  'بدلات أخرى': 'Other Allowances',
+  '+ إضافة بدل': '+ Add Allowance',
+  'إجمالي البدلات الأخرى': 'Other Allowances Total',
+  'خصم التأمينات (أساسي + سكن) × 9.75%': 'GOSI (Basic + Housing) × 9.75%',
+  '(أساسي + سكن) × 9.75% · تلقائي': '(Basic + Housing) × 9.75% · auto',
+  'صافي الراتب': 'Net Salary',
+  'قيمة اليوم': 'Day Value',
+  'إجمالي الراتب': 'Gross Salary',
+  'الأساسي': 'Basic',
+  'السكن': 'Housing',
+  'النقل': 'Transport',
+  // Budget
+  'المصاريف الثابتة': 'Fixed Expenses',
+  '45% من صافي الراتب · ثابت': '45% of net salary · fixed',
+  'وزّع فائضك بالريال': 'Allocate Your Surplus',
+  'حدد كم تريد لكل صنف — الباقي يظهر تلقائياً': 'Set amount per category — surplus shown automatically',
+  '+ إضافة تصنيف': '+ Add Category',
+  '🟡 الفائض المتبقي': '🟡 Remaining Surplus',
+  '💡 اقتراح المصروف اليومي': '💡 Daily Budget Suggestion',
+  'الفائض الشهري بعد المصاريف والطوارئ والاستثمار والترفيه، مقسوم على 30 يوم': 'Monthly surplus after all categories ÷ 30 days',
+  'الفائض الشهري': 'Monthly Surplus',
+  'المقترح يومياً': 'Suggested Daily',
+  // Obligations
+  '📋 الالتزامات الشهرية': '📋 Monthly Expenses',
+  'إيجار · فواتير · اشتراكات': 'Rent · Bills · Subscriptions',
+  '+ إضافة التزام': '+ Add Expense',
+  'الإجمالي': 'Total',
+  '🏦 القروض الشهرية': '🏦 Monthly Loans',
+  'أقساط · تمويل · بطاقات': 'Installments · Finance · Cards',
+  '+ إضافة قرض': '+ Add Loan',
+  '🏥 تأمين الوالدين': '🏥 Parents Insurance',
+  'لا أحد': 'None',
+  'شخص واحد': 'One Person',
+  'شخصان': 'Two Persons',
+  'إجمالي التأمين': 'Insurance Total',
+  '🏋️ اشتراك النادي الرياضي': '🏋️ Gym Subscription',
+  'الاشتراك الشهري': 'Monthly Fee',
+  'يُخصم من الراتب': 'Deducted from Salary',
+  // Extras
+  '🌙 العمل المسائي': '🌙 Evening Work',
+  'اليومي': 'Daily',
+  'الشهري (5 أيام)': 'Monthly (5 days)',
+  '⏱ الأوفر تايم': '⏱ Overtime',
+  '9 ساعات لليوم الواحد': '9 hours per day',
+  'عدد أيام الأوفر تايم في الشهر': 'Overtime Days per Month',
+  'عدد الساعات الإضافية': 'Extra Hours',
+  '(لمن يدوام بالساعات بدل الأيام)': '(for hourly employees)',
+  'سعر الساعة الإضافية': 'Overtime Hourly Rate',
+  'إجمالي الشهر': 'Monthly Total',
+  '📞 On-Call': '📞 On-Call',
+  'أسبوع كامل': 'Full Week',
+  'أدخل عدد المكالمات لكل يوم على حدة': 'Enter number of calls per day',
+  'أول شهر · 700 ريال/أسبوع': 'First month · 700 SAR/week',
+  'بعد الشهر · 1,400 ريال/أسبوع': 'After 1 month · 1,400 SAR/week',
+  'إجمالي On-Call شهرياً': 'Monthly On-Call Total',
+  'إجمالي الدخل الإضافي شهرياً': 'Total Extra Monthly Income',
+  // Common
+  'لا': 'No',
+  'نعم': 'Yes',
+  'ريال': 'SAR',
+  'ساعة': 'hrs',
+  'سنة': 'yr',
+  // Summary
+  '📋 الملخص المالي': '📋 Financial Summary',
+  'دخل إضافي (مسائي + أوفر + On-Call)': 'Extra Income (Evening + OT + On-Call)',
+  'الالتزامات الشهرية': 'Monthly Obligations',
+  'أقساط القروض': 'Loan Installments',
+  'تأمين الوالدين': 'Parents Insurance',
+  'اشتراك النادي': 'Gym Subscription',
+  'الإجمالي الكلي للالتزامات': 'Total Obligations',
+  'حد الاستقطاع (55%)': 'Debt Limit (55%)',
+  'المتبقي الصافي': 'Net Remaining',
+  // SMS
+  '📥 تسجيل المصروفات': '📥 Record Expenses',
+  'الصق رسالة البنك هنا': 'Paste bank SMS here',
+  'تحليل 🔍': 'Analyze 🔍',
+  '📷 رفع فاتورة': '📷 Upload Invoice',
+  '🔑 إعداد مفتاح API (مطلوب لقراءة الفواتير)': '🔑 Setup API Key (required for invoices)',
+  '📊 المصروفات حسب التصنيف': '📊 Expenses by Category',
+  '📋 سجل العمليات': '📋 Transaction Log',
+  '🗑 مسح السجل': '🗑 Clear Log',
+  'إجمالي المصروفات هذا الشهر': 'Total Expenses This Month',
+  '0 عملية مسجّلة': '0 transactions recorded',
+  // Reports
+  '📆 التقارير الشهرية': '📆 Monthly Reports',
+  'ملخص كل شهر من سجل المصروفات — اضغط السهم للتفاصيل': 'Monthly summary from expense log — tap arrow for details',
+  'لا توجد بيانات بعد · أضف مصروفات من قسم المصروفات': 'No data yet · Add expenses from the Expenses section',
+  // Projection
+  '📈 راتبي المستقبلي التقديري': '📈 Future Salary Projection',
+  'الراتب الأساسي الحالي': 'Current Basic Salary',
+  'صافي الراتب الحالي': 'Current Net Salary',
+  'نسبة الزيادة السنوية': 'Annual Raise %',
+  'عدد السنوات': 'Number of Years',
+  '🗑 مسح الجدول': '🗑 Clear Table',
+  'جدول الزيادات السنوية': 'Annual Salary Growth Table',
+  // Modal
+  'تأكيد إعادة الضبط': 'Confirm Reset',
+  'هذا الإجراء سيمسح:': 'This will clear:',
+  'تأكيد': 'Confirm',
+  'إلغاء': 'Cancel',
+  // API Key
+  'مفتاح Anthropic API 🔑': '🔑 Anthropic API Key',
+  'احصل عليه من console.anthropic.com': 'Get it from console.anthropic.com',
+  'حفظ': 'Save',
+  '✅ مفتاح محفوظ': '✅ Key Saved',
+  // AI
+  'مساعد يسير': 'Yaseer Assistant',
+  '● متصل': '● Online',
+  // Invoice
+  '📷 تحليل الفاتورة': '📷 Invoice Scanner',
+  'جاري التحليل...': 'Analyzing...',
+  'المبلغ': 'Amount',
+  'التصنيف': 'Category',
+  'اسم المحل': 'Merchant',
+  '✅ إضافة للسجل': '✅ Add to Log',
+  // Placeholders / misc
+  'اسم الالتزام': 'Expense name',
+  'المبلغ الشهري': 'Monthly amount',
+  'لا توجد عمليات بعد': 'No transactions yet',
+  'بدل السكن': 'Housing Allowance',
+  'بدل النقل': 'Transport Allowance',
+  'بدلات أخرى': 'Other Allowances',
+  'إجمالي البدلات الأخرى': 'Other Allowances Total',
+  'خصم التأمينات': 'GOSI Deduction',
+  'الراتب اليومي': 'Daily Salary',
+  'إجمالي الراتب': 'Gross Salary',
+  'صافي الراتب': 'Net Salary',
+  'الراتب المتبقي بعد كل الالتزامات': 'Remaining after all obligations',
+  'تفصيل كامل': 'Full Breakdown',
+  'البند': 'Item',
+  'المبلغ': 'Amount',
+  'نهاية الأسبوع': 'Weekend',
+  'أسبوع كامل': 'Full Week',
+  'لا يوجد': 'None',
+  'السنة': 'Year',
+  'الأساسي': 'Basic',
+  'الزيادة': 'Raise',
+  'الصافي (بعد التأمينات)': 'Net (after GOSI)',
+  'سنة': 'Year',
+  'مثال: 5': 'e.g. 5',
+  'مثال: 10': 'e.g. 10',
+  'ادخار الطوارئ': 'Emergency Savings',
+  'الاستثمار': 'Investment',
+  'الترفيه': 'Entertainment',
+  'تصنيف جديد': 'New Category',
+  'اسم التصنيف': 'Category Name',
+  'المبلغ اليومي المسموح': 'Daily Budget Limit',
+  'المصروف الفعلي اليوم': 'Actual Spend Today',
+  'الراتب المتبقي بعد كل الالتزامات': 'Remaining Salary',
+  'متاح': 'Available',
+  'من صافي الراتب': 'of net salary',
+  'حفظ البيانات 💾': 'Save Data 💾',
+  'تصدير PDF 📄': 'Export PDF 📄',
+  'مثال: تم خصم 150.00 ريال من حسابك في 18/06 لدى STC PAY...': 'e.g: SAR 150.00 was deducted from your account on 18/06 at STC PAY...',
+  'لصق رسالة البنك': 'Paste Bank SMS',
+  'الراتب اليومي': 'Daily Value',
+  'استقطاع GOSI': 'GOSI Deduction',
+  'الراتب الشهري الصافي': 'Net Monthly Salary',
+  'قرض شخصي': 'Personal Loan',
+  'قرض السيارة': 'Car Loan',
+  'لا يوجد': 'None',
+  ' يوم': ' day',
+  ' أيام': ' days',
+  ' أسبوع': ' week',
+  ' أسابيع': ' weeks',
+  '% من الفائض المتاح': '% of available surplus',
+  'عملية مسجّلة': 'transactions',
+  'تم الحفظ ✅': 'Saved ✅',
+  'تعذّر الحفظ ⚠': 'Save failed ⚠',
+  'تم المسح ✅': 'Cleared ✅',
+  'تم مسح السجل ✅': 'Log cleared ✅',
+  '✅ مفتاح محفوظ': '✅ Key Saved',
+  '✅ تم الحفظ!': '✅ Saved!',
+  '❌ مفتاح غير صحيح — يبدأ بـ sk-ant-': '❌ Invalid key — must start with sk-ant-',
+  '🔍 جاري قراءة الفاتورة...': '🔍 Reading invoice...',
+  '⚠️ أضف مفتاح API أولاً — اضغط 🔑 في الأعلى': '⚠️ Add API key first',
+  '❌ ما قدر يقرأ الفاتورة. حاول بصورة أوضح.': '❌ Could not read invoice.',
+  '✅ تمت الإضافة من الفاتورة': '✅ Added from invoice',
+  'لا توجد بيانات بعد': 'No data yet',
+};
+
+
+var _EN_TO_AR = {};
+
+// Helper: translate a string
+function t(str) {
+  if (!str) return str;
+  if (_isEn && _AR_TO_EN[str]) return _AR_TO_EN[str];
+  if (!_isEn && _EN_TO_AR[str]) return _EN_TO_AR[str];
+  return str;
+}
+
+Object.keys(_AR_TO_EN).forEach(function(k){ _EN_TO_AR[_AR_TO_EN[k]] = k; });
+
+function _translateNode(node, toEn) {
+  if (node.nodeType === 3) { // text node
+    var txt = node.textContent.trim();
+    if (!txt) return;
+    if (toEn && _AR_TO_EN[txt]) node.textContent = node.textContent.replace(txt, _AR_TO_EN[txt]);
+    else if (!toEn && _EN_TO_AR[txt]) node.textContent = node.textContent.replace(txt, _EN_TO_AR[txt]);
+  } else if (node.nodeType === 1) {
+    // Skip script/style/input
+    var tag = node.tagName;
+    if (tag === 'SCRIPT' || tag === 'STYLE') return;
+    // Translate placeholder
+    if (node.placeholder) {
+      var ph = node.placeholder.trim();
+      if (toEn && _AR_TO_EN[ph]) node.placeholder = _AR_TO_EN[ph];
+      else if (!toEn && _EN_TO_AR[ph]) node.placeholder = _EN_TO_AR[ph];
+    }
+    // Translate title
+    if (node.title) {
+      var ti = node.title.trim();
+      if (toEn && _AR_TO_EN[ti]) node.title = _AR_TO_EN[ti];
+      else if (!toEn && _EN_TO_AR[ti]) node.title = _EN_TO_AR[ti];
+    }
+    node.childNodes.forEach(function(child){ _translateNode(child, toEn); });
+  }
+}
+
+function applyTranslation(toEn) {
+  _translateNode(document.body, toEn);
+  document.documentElement.dir = toEn ? 'ltr' : 'rtl';
+  document.documentElement.lang = toEn ? 'en' : 'ar';
+  var btn = document.getElementById('lang-btn');
+  if (btn) btn.textContent = toEn ? 'ع' : 'EN';
+  localStorage.setItem('yaseer_lang', toEn ? 'en' : 'ar');
+  _isEn = toEn;
+}
+
+function toggleLangBtn() {
+  applyTranslation(!_isEn);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('lang-btn');
+  if (btn) {
+    btn.textContent = _isEn ? 'ع' : 'EN';
+    btn.onclick = toggleLangBtn;
+  }
+  if (_isEn) setTimeout(function(){ applyTranslation(true); }, 300);
+});
+
+</script>
 </body>
 </html>
