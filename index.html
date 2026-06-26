@@ -3271,12 +3271,9 @@ async function scanInvoice(input) {
 
     } catch(err) {
       var statusEl = document.getElementById('invoice-status');
-      if (err.message && err.message.includes('fetch')) {
-        statusEl.textContent = '⚠️ تحتاج إنترنت لقراءة الفاتورة. ارفع الموقع على Netlify أولاً.';
-      } else {
-        statusEl.textContent = t('❌ ما قدر يقرأ الفاتورة. حاول بصورة أوضح.');
-      }
+      statusEl.textContent = '❌ خطأ: ' + (err.message || 'غير معروف');
       statusEl.style.color = 'var(--red)';
+      console.error('Invoice scan error:', err);
     }
   };
 
